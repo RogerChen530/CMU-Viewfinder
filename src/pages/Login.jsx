@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient.js";
 
 export default function Login() {
@@ -42,7 +42,7 @@ export default function Login() {
           className="w-full border border-seam rounded px-3 py-2 mb-2 text-sm"
         />
         <p className="text-xs text-right mb-2">
-          <a href="/forgot-password" className="text-ash hover:text-moss">忘記密碼？</a>
+          <Link to="/forgot-password" className="text-ash hover:text-moss">忘記密碼？</Link>
         </p>
 
         {error && <p className="text-xs text-red-700 mb-3">{error}</p>}
@@ -52,7 +52,7 @@ export default function Login() {
         </button>
 
         <p className="text-xs text-ash mt-4 text-center">
-          還沒有帳號？<a href="/register" className="text-moss">註冊</a>
+          還沒有帳號？<Link to="/register" className="text-moss">註冊</Link>
         </p>
       </form>
     </div>

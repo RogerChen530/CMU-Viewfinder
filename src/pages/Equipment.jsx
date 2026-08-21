@@ -5,7 +5,7 @@ import { Mono } from "../components/ui.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 
 export default function Equipment({ user, role }) {
-  const canBorrow = !!user;
+  const canBorrow = role === "member" || role === "admin";
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,7 +59,9 @@ export default function Equipment({ user, role }) {
 
         {!canBorrow && (
           <div className="mb-8 border border-seam rounded p-4 text-sm text-ash bg-concrete/40">
-            登入後即可租借器材。目前你以訪客身份瀏覽，只能查看目錄。
+            {!user
+              ? "登入後即可租借器材。目前你以訪客身份瀏覽，只能查看目錄。"
+              : "你的帳號正在等候管理員審核學生身份，審核通過後才能租借器材。"}
           </div>
         )}
 

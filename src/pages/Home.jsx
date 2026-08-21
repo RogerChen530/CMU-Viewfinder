@@ -8,7 +8,7 @@ import { Seam, Mono } from "../components/ui.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 
 export default function Home({ user, role }) {
-  const canBorrow = !!user;
+  const canBorrow = role === "member" || role === "admin";
   const [equipment, setEquipment] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [heroPhoto, setHeroPhoto] = useState(null);

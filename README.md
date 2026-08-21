@@ -113,6 +113,12 @@ supabase functions deploy verify-turnstile
 - [ ] 相簿刪除時沒有一併清掉 Storage 裡的實體檔案（只刪資料庫那筆），
   頭像也是同樣狀況（換新大頭照，舊檔案不會自動清掉）
 - [ ] Resend 通知信還沒真的設定 secrets／deploy（notify-admin function 還沒接上真實 API key）
+- [x] 修正 pending 帳號看到租借按鈕但按下去靜默失敗的問題：
+  canBorrow 改成同時檢查 role 是不是 member/admin，不能只看有沒有登入
+- [x] 修正 Login/Register 頁面互相切換的連結：原本用原生 `<a href>`
+  會整頁跳轉到網域根目錄，在 GitHub Pages 這種部署在子路徑的環境
+  下會 404（本地開發因為根目錄本來就是 / 不會發現）。改用 React
+  Router 的 `<Link>` 走前端路由，正確接上子路徑
 
 ## 部署
 

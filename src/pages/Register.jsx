@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient.js";
 import TurnstileWidget from "../components/TurnstileWidget.jsx";
 
@@ -155,7 +155,7 @@ export default function Register() {
         </button>
 
         <p className="text-xs text-ash mt-4 text-center">
-          已經有帳號？<a href="/login" className="text-moss">登入</a>
+          已經有帳號？<Link to="/login" className="text-moss">登入</Link>
         </p>
       </form>
     </div>
