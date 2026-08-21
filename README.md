@@ -80,6 +80,8 @@ supabase functions deploy notify-admin
   這個安全視圖，不會曝露學號跟電話（避免一般社員直接查表挖出敏感資料）
 - [x] 空資料的顯示規則：名字沒填顯示「神秘客」、聯絡方式留白就不顯示該行，
   沒有大頭照時顯示預設空白頭像圖示，都不會出現 null/undefined 字樣
+- [x] 相簿燈箱：點擊照片展開全圖 + 詳細資訊（作者、拍攝條件、創作理念），
+  首頁跟 /gallery 都有，/admin/gallery 新增照片時可以填作者跟創作理念
 - [ ] 相簿刪除時沒有一併清掉 Storage 裡的實體檔案（只刪資料庫那筆），
   頭像也是同樣狀況（換新大頭照，舊檔案不會自動清掉）
 - [ ] Resend 通知信還沒真的設定 secrets／deploy（notify-admin function 還沒接上真實 API key）

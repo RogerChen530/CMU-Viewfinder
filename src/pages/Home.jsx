@@ -3,6 +3,7 @@ import Nav from "../components/Nav.jsx";
 import Hero from "../components/Hero.jsx";
 import EquipmentCard from "../components/EquipmentCard.jsx";
 import GalleryFrame from "../components/GalleryFrame.jsx";
+import PhotoLightbox from "../components/PhotoLightbox.jsx";
 import { Seam, Mono } from "../components/ui.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 
@@ -12,6 +13,7 @@ export default function Home({ user, role }) {
   const [photos, setPhotos] = useState([]);
   const [heroPhoto, setHeroPhoto] = useState(null);
   const [announcements, setAnnouncements] = useState([]);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
 
   const loadEquipment = useCallback(() => {
     supabase
@@ -158,7 +160,11 @@ export default function Home({ user, role }) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {photos.map((p) => (
-              <GalleryFrame key={p.id} photo={{ ...p, exif: p.exif || p.caption }} />
+              <GalleryFrame
+                key={p.id}
+                photo={{ ...p, exif: p.exif || p.caption }}
+                onClick={() => setSelectedPhoto(p)}
+              />
             ))}
           </div>
         )}
@@ -168,6 +174,8 @@ export default function Home({ user, role }) {
         <span>© 2026 CMU Viewfinder</span>
         <Mono>as-cast · no.14</Mono>
       </footer>
+
+      <PhotoLightbox photo={selectedPhoto} onClose={() => setSelectedPhoto(null)} />
     </div>
   );
 }

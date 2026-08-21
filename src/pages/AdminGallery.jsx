@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabaseClient.js";
 export default function AdminGallery({ user, role }) {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ image_url: "", caption: "", exif: "" });
+  const [form, setForm] = useState({ image_url: "", caption: "", exif: "", author: "", description: "" });
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -59,7 +59,7 @@ export default function AdminGallery({ user, role }) {
       return;
     }
 
-    setForm({ image_url: "", caption: "", exif: "" });
+    setForm({ image_url: "", caption: "", exif: "", author: "", description: "" });
     setFile(null);
     await load();
   }
@@ -111,6 +111,19 @@ export default function AdminGallery({ user, role }) {
             value={form.exif}
             onChange={(e) => setForm({ ...form, exif: e.target.value })}
             className="border border-seam rounded px-3 py-2 text-sm"
+          />
+          <input
+            placeholder="作者（選填，不一定是上傳的管理員本人）"
+            value={form.author}
+            onChange={(e) => setForm({ ...form, author: e.target.value })}
+            className="border border-seam rounded px-3 py-2 text-sm"
+          />
+          <textarea
+            placeholder="創作理念（選填，會顯示在點開照片的詳細頁）"
+            rows={3}
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            className="border border-seam rounded px-3 py-2 text-sm resize-none"
           />
         </div>
         {error && <p className="text-red-700 text-xs mb-3">{error}</p>}

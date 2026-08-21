@@ -1,9 +1,12 @@
 import React from "react";
 import { Corner, Mono } from "./ui.jsx";
 
-export default function GalleryFrame({ photo }) {
+export default function GalleryFrame({ photo, onClick }) {
   return (
-    <div className="relative aspect-[4/5] bg-concrete rounded overflow-hidden">
+    <div
+      className={`relative aspect-[4/5] bg-concrete rounded overflow-hidden ${onClick ? "cursor-pointer" : ""}`}
+      onClick={onClick}
+    >
       {photo.image_url ? (
         <img src={photo.image_url} alt={photo.caption || ""} className="absolute inset-0 w-full h-full object-cover" />
       ) : (

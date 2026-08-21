@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import Nav from "../components/Nav.jsx";
 import GalleryFrame from "../components/GalleryFrame.jsx";
+import PhotoLightbox from "../components/PhotoLightbox.jsx";
 import { Mono } from "../components/ui.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 
 export default function Gallery({ user, role }) {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     supabase
@@ -35,11 +37,17 @@ export default function Gallery({ user, role }) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {photos.map((p) => (
-              <GalleryFrame key={p.id} photo={{ ...p, exif: p.exif || p.caption }} />
+              <GalleryFrame
+                key={p.id}
+                photo={{ ...p, exif: p.exif || p.caption }}
+                onClick={() => setSelected(p)}
+              />
             ))}
           </div>
         )}
       </section>
+
+      <PhotoLightbox photo={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }
