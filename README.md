@@ -88,4 +88,21 @@ supabase functions deploy notify-admin
 
 ## 部署
 
-透過 GitHub Actions 建置後部署到 GitHub Pages。`vite.config.js` 的 `base` 需對應到 repo 名稱或自訂網域路徑。
+透過 GitHub Actions 建置後部署到 GitHub Pages。`vite.config.js` 的 `base` 只在 `npm run build`（正式建置）時套用 `/CMU-Viewfinder/`，本地開發維持根目錄。
+
+**1. 在 repo 設定 Secrets**（Settings → Secrets and variables → Actions → New repository secret）：
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+跟你 `.env.local` 裡的值一樣，這樣建置時才能把 Supabase 連線資訊打包進靜態網頁。
+
+**2. 開啟 GitHub Pages**（Settings → Pages）：
+- Source 選 **GitHub Actions**（不是 "Deploy from a branch"）
+
+**3. push 到 main 就會自動部署**
+`.github/workflows/deploy.yml` 監聽 `main` 分支的 push，自動建置並發布。第一次設定完 Secrets 跟 Pages Source 後，可以去 repo 的 Actions 分頁手動觸發一次（workflow 右側有 "Run workflow" 按鈕），或者隨便 push 一個小改動觸發它。
+
+**4. 確認網址**
+部署成功後，網站網址會是 `https://rogerchen530.github.io/CMU-Viewfinder/`，可以在 repo 的 Settings → Pages 頁面上方看到這個連結。
+
+**關於前端路由 404 的處理**：GitHub Pages 是純靜態主機，不懂 `/team`、`/gallery` 這種 React Router 的前端路由，直接訪問這些網址或重新整理會 404。Workflow 裡會自動把 `index.html` 複製成 `404.html`，讓 GitHub Pages 對任何未知路徑都回傳同一份內容，由瀏覽器端的 React Router 接手判斷要顯示哪一頁。
