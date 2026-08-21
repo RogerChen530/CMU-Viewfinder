@@ -19,20 +19,28 @@ export default function Team({ user }) {
       setLoading(true);
 
       // 讀自己的 role（RLS: "read own profile" 允許）
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
         .single();
 
+      if (profileError) {
+        console.error("讀取 profile 失敗：", profileError);
+      }
+
       setRole(profile?.role ?? "pending");
 
       // projects 的 RLS 只讓 member/admin 讀得到，
       // 如果 role 還是 pending，這裡會回空陣列（RLS 擋下來），不會噴錯。
-      const { data: projectData } = await supabase
+      const { data: projectData, error: projectError } = await supabase
         .from("projects")
         .select("*")
         .order("created_at", { ascending: false });
+
+      if (projectError) {
+        console.error("讀取 projects 失敗：", projectError);
+      }
 
       setProjects(projectData ?? []);
       setLoading(false);
