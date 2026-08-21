@@ -1,10 +1,35 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import NotificationBell from "./NotificationBell.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 
+function getGreeting() {
+  // 用 UTC+8（台灣時間）判斷，不依賴瀏覽器所在時區
+  const taipeiHour = new Date(Date.now() + 8 * 60 * 60 * 1000).getUTCHours();
+  if (taipeiHour >= 5 && taipeiHour < 11) return "早安";
+  if (taipeiHour >= 11 && taipeiHour < 18) return "午安";
+  return "晚安";
+}
+
 export default function Nav({ user, role }) {
   const navigate = useNavigate();
+  const [displayName, setDisplayName] = useState(null);
+
+  useEffect(() => {
+    if (!user) {
+      setDisplayName(null);
+      return;
+    }
+
+    supabase
+      .from("profiles")
+      .select("real_name, display_name")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        setDisplayName(data?.display_name || data?.real_name || "神秘客");
+      });
+  }, [user]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -31,13 +56,13 @@ export default function Nav({ user, role }) {
         {user && <NotificationBell />}
         {user ? (
           <div className="flex items-center gap-2">
-            <Link to="/account" className="text-sm text-ash hover:text-ink hidden md:inline">
-              {user.email}
+            <span className="text-sm text-ash hidden lg:inline">
+              {getGreeting()}，{displayName ?? "..."}
+            </span>
+            <Link to="/account" className="text-sm border border-seam px-4 py-2 rounded">
+              維護個人資料
             </Link>
-            <button
-              onClick={handleLogout}
-              className="text-sm border border-seam px-4 py-2 rounded"
-            >
+            <button onClick={handleLogout} className="text-sm border border-seam px-4 py-2 rounded">
               登出
             </button>
           </div>
