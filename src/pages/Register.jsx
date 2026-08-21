@@ -38,9 +38,16 @@ export default function Register() {
       return;
     }
 
-    // TODO: 這裡之後要接 Supabase Edge Function，
-    // 在 pending_members 表寫入一筆資料並寄通知信給管理員做審核。
-    // 目前先讓帳號建立成功，審核流程下一版再實作。
+    const newUserId = data.user?.id;
+    if (newUserId) {
+      // 建立 pending 狀態的 profile（role 預設就是 pending，見 migration）
+      await supabase.from("profiles").insert({ id: newUserId, student_id: studentId });
+
+      // 通知管理員來審核
+      await supabase.functions.invoke("notify-admin", {
+        body: { email, studentId },
+      });
+    }
 
     setSubmitted(true);
   }
