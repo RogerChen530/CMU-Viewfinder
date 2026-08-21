@@ -1,6 +1,6 @@
 # Changelog
 
-CMU Viewfinder 的功能開發紀錄，依主題分類（不是逐次 commit 的流水帳）。設定/部署步驟請看 `README.md`。
+CMU Viewfinder 的功能開發紀錄。設定/部署步驟請看 `README.md`。
 
 ## 帳號與權限
 
