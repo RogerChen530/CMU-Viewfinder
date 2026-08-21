@@ -11,6 +11,7 @@ function validatePassword(pwd) {
 }
 
 export default function Register() {
+  const [applicantType, setApplicantType] = useState("student"); // "student" | "external"
   const [email, setEmail] = useState("");
   const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
@@ -20,6 +21,8 @@ export default function Register() {
   const [turnstileToken, setTurnstileToken] = useState(null);
   const [widgetKey, setWidgetKey] = useState(0); // 改變這個值可以強制重新渲染 widget
   const navigate = useNavigate();
+
+  const isStudent = applicantType === "student";
 
   function resetTurnstile() {
     setTurnstileToken(null);
@@ -55,23 +58,27 @@ export default function Register() {
       return;
     }
 
-    const { data: exists, error: checkError } = await supabase.rpc("student_id_exists", {
-      sid: studentId,
-    });
+    if (isStudent) {
+      const { data: exists, error: checkError } = await supabase.rpc("student_id_exists", {
+        sid: studentId,
+      });
 
-    if (checkError) {
-      console.error("學號檢查失敗：", checkError);
-    } else if (exists) {
-      setError("此學號已經註冊過，請確認學號是否正確");
-      resetTurnstile();
-      setSubmitting(false);
-      return;
+      if (checkError) {
+        console.error("學號檢查失敗：", checkError);
+      } else if (exists) {
+        setError("此學號已經註冊過，請確認學號是否正確");
+        resetTurnstile();
+        setSubmitting(false);
+        return;
+      }
     }
 
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { student_id: studentId, verified: false } },
+      options: {
+        data: { student_id: isStudent ? studentId : null, verified: false },
+      },
     });
 
     setSubmitting(false);
@@ -87,7 +94,7 @@ export default function Register() {
     // 手動 insert 會被 RLS 擋下來，靜默失敗）。
     // 這裡只需要通知管理員來審核。
     await supabase.functions.invoke("notify-admin", {
-      body: { email, studentId },
+      body: { email, studentId: isStudent ? studentId : "外部人士申請" },
     });
 
     setSubmitted(true);
@@ -99,7 +106,9 @@ export default function Register() {
         <div className="max-w-sm text-center">
           <h1 className="font-display text-xl font-medium mb-3">註冊申請已送出</h1>
           <p className="text-sm text-ash">
-            請至信箱完成驗證信，並等待社團管理員確認學生身份後，帳號才會開通器材租借與社員專區的權限。
+            {isStudent
+              ? "請至信箱完成驗證信，並等待社團管理員確認學生身份後，帳號才會開通器材租借與社員專區的權限。"
+              : "請至信箱完成驗證信。你的申請會由社團管理員另外審核，審核方式依社團當時的決議為準。"}
           </p>
         </div>
       </div>
@@ -111,6 +120,28 @@ export default function Register() {
       <form onSubmit={handleSubmit} className="w-full max-w-sm border border-seam rounded p-8">
         <h1 className="font-display text-xl font-medium mb-6">申請加入社團</h1>
 
+        <label className="block text-xs text-ash mb-2">身份</label>
+        <div className="flex gap-4 mb-4">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="applicantType"
+              checked={isStudent}
+              onChange={() => setApplicantType("student")}
+            />
+            學生
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="applicantType"
+              checked={!isStudent}
+              onChange={() => setApplicantType("external")}
+            />
+            外部人士
+          </label>
+        </div>
+
         <label className="block text-xs text-ash mb-1">Email</label>
         <input
           type="email"
@@ -120,15 +151,25 @@ export default function Register() {
           className="w-full border border-seam rounded px-3 py-2 mb-4 text-sm"
         />
 
-        <label className="block text-xs text-ash mb-1">學號</label>
-        <input
-          type="text"
-          required
-          value={studentId}
-          onChange={(e) => setStudentId(e.target.value)}
-          className="w-full border border-seam rounded px-3 py-2 mb-4 text-sm"
-          placeholder="用於管理員審核學生身份"
-        />
+        {isStudent && (
+          <>
+            <label className="block text-xs text-ash mb-1">學號</label>
+            <input
+              type="text"
+              required
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+              className="w-full border border-seam rounded px-3 py-2 mb-4 text-sm"
+              placeholder="用於管理員審核學生身份"
+            />
+          </>
+        )}
+
+        {!isStudent && (
+          <p className="text-[11px] text-ash mb-4 border border-seam rounded p-3">
+            外部人士申請不需要填學號，送出後由社團管理員另外審核，具體審核方式依社團決議為準。
+          </p>
+        )}
 
         <label className="block text-xs text-ash mb-1">密碼</label>
         <input

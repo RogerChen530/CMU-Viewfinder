@@ -65,7 +65,9 @@ export default function Admin({ user, role }) {
               {pending.map((p) => (
                 <div key={p.id} className="flex justify-between items-center border border-seam rounded p-4">
                   <div>
-                    <p className="text-sm font-medium">學號：{p.student_id}</p>
+                    <p className="text-sm font-medium">
+                      {p.student_id ? `學號：${p.student_id}` : "外部人士申請"}
+                    </p>
                     <Mono>{new Date(p.created_at).toLocaleString("zh-TW")}</Mono>
                   </div>
                   <div className="flex gap-2">
@@ -99,7 +101,7 @@ export default function Admin({ user, role }) {
                 <div key={p.id} className="flex justify-between items-center border border-seam rounded p-4">
                   <div>
                     <p className="text-sm font-medium">
-                      {p.real_name || "（尚未填寫真名）"} · 學號：{p.student_id}
+                      {p.real_name || "（尚未填寫真名）"} · {p.student_id ? `學號：${p.student_id}` : "外部人士"}
                       {p.id === user.id && <span className="text-ash text-xs ml-2">(你)</span>}
                     </p>
                     <p className="text-ash text-xs mt-1">
