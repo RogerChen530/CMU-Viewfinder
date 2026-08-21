@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Nav from "../components/Nav.jsx";
+import Avatar from "../components/Avatar.jsx";
 import { Mono } from "../components/ui.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 
@@ -16,9 +17,8 @@ export default function Team({ user, role }) {
 
     setLoading(true);
     supabase
-      .from("profiles")
-      .select("id, student_id, role, created_at")
-      .in("role", ["member", "admin"])
+      .from("member_directory")
+      .select("*")
       .order("created_at", { ascending: true })
       .then(({ data, error }) => {
         if (error) console.error("讀取社員名單失敗：", error);
@@ -62,20 +62,29 @@ export default function Team({ user, role }) {
         )}
 
         {user && (role === "member" || role === "admin") && (
-          <div className="flex flex-col gap-2 max-w-lg">
-            {loading && <p className="text-ash text-sm">載入中...</p>}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {loading && <p className="text-ash text-sm col-span-3">載入中...</p>}
             {!loading && members.length === 0 && (
-              <p className="text-ash text-sm">目前還沒有其他社員。</p>
+              <p className="text-ash text-sm col-span-3">目前還沒有其他社員。</p>
             )}
-            {members.map((m) => (
-              <div key={m.id} className="flex justify-between items-center border border-seam rounded p-4">
-                <p className="text-sm font-medium">
-                  學號：{m.student_id}
-                  {m.id === user.id && <span className="text-ash text-xs ml-2">(你)</span>}
-                </p>
-                <Mono>{m.role === "admin" ? "管理員" : "社員"}</Mono>
-              </div>
-            ))}
+            {members.map((m) => {
+              const name = m.display_name || m.real_name || "神秘客";
+              return (
+                <div key={m.id} className="border border-seam rounded p-5 flex flex-col items-center text-center">
+                  <Avatar url={m.avatar_url} size={72} alt={name} />
+                  <p className="text-sm font-medium mt-3">
+                    {name}
+                    {m.id === user.id && <span className="text-ash text-xs ml-1">(你)</span>}
+                  </p>
+                  <Mono className="mt-1">{m.role === "admin" ? "管理員" : "社員"}</Mono>
+                  <div className="mt-3 flex flex-col gap-1 text-xs text-ash w-full">
+                    {m.contact_email && <span className="truncate">{m.contact_email}</span>}
+                    {m.ig_id && <span>@{m.ig_id}</span>}
+                    {!m.contact_email && !m.ig_id && <span>—</span>}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>

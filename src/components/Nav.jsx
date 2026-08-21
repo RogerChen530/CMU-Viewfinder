@@ -31,7 +31,9 @@ export default function Nav({ user, role }) {
         {user && <NotificationBell />}
         {user ? (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-ash hidden md:inline">{user.email}</span>
+            <Link to="/account" className="text-sm text-ash hover:text-ink hidden md:inline">
+              {user.email}
+            </Link>
             <button
               onClick={handleLogout}
               className="text-sm border border-seam px-4 py-2 rounded"

@@ -74,8 +74,14 @@ supabase functions deploy notify-admin
 - [x] equipment 欄位層級保護：改用 trigger，非 admin 更新器材時
   如果動到 name/model/category/asset_code 會直接被拒絕，
   租借相關欄位（status/current_holder/due_date）不受影響
+- [x] /account 個人資料維護頁：大頭照上傳、真名、多個暱稱(可選要顯示哪個，預設真名)、
+  聯絡 Email、IG、電話。電話只有管理員看得到，社員名單不會顯示
+- [x] /team 社員名單改顯示大頭照/名字/Email/IG，改抓 member_directory
+  這個安全視圖，不會曝露學號跟電話（避免一般社員直接查表挖出敏感資料）
+- [x] 空資料的顯示規則：名字沒填顯示「神秘客」、聯絡方式留白就不顯示該行，
+  沒有大頭照時顯示預設空白頭像圖示，都不會出現 null/undefined 字樣
 - [ ] 相簿刪除時沒有一併清掉 Storage 裡的實體檔案（只刪資料庫那筆），
-  刪除多了 Storage 空間會有孤兒檔案，之後可以補
+  頭像也是同樣狀況（換新大頭照，舊檔案不會自動清掉）
 - [ ] Resend 通知信還沒真的設定 secrets／deploy（notify-admin function 還沒接上真實 API key）
 
 ## 部署

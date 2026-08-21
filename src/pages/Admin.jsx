@@ -12,7 +12,7 @@ export default function Admin({ user, role }) {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, student_id, role, created_at")
+      .select("id, student_id, role, created_at, real_name, phone, contact_email, ig_id")
       .order("created_at", { ascending: false });
 
     if (error) console.error("讀取 profiles 失敗：", error);
@@ -99,8 +99,11 @@ export default function Admin({ user, role }) {
                 <div key={p.id} className="flex justify-between items-center border border-seam rounded p-4">
                   <div>
                     <p className="text-sm font-medium">
-                      學號：{p.student_id}
+                      {p.real_name || "（尚未填寫真名）"} · 學號：{p.student_id}
                       {p.id === user.id && <span className="text-ash text-xs ml-2">(你)</span>}
+                    </p>
+                    <p className="text-ash text-xs mt-1">
+                      {[p.phone, p.contact_email, p.ig_id && `@${p.ig_id}`].filter(Boolean).join(" · ") || "尚無聯絡方式"}
                     </p>
                     <Mono>{p.role}</Mono>
                   </div>
