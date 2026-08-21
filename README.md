@@ -62,14 +62,21 @@ supabase functions deploy notify-admin
 - [x] /projects 專案頁（member/admin 限定，同原本 /team 的權限邏輯）
 - [x] 管理連結文字從「管理後台」改成「管理」
 - [x] 公告功能 + 導覽列通知鈴（顯示最近 30 天公告，未讀狀態存在瀏覽器 localStorage，不跨裝置同步）
-- [ ] 相簿真的檔案上傳（Supabase Storage），現在只能貼網址
-- [ ] 器材租借按鈕還沒接上真的 update（按下去沒有動作）
-- [ ] 登出按鈕
-- [ ] 忘記密碼流程
-- [ ] 學號唯一性檢查（目前同一個學號可以重複註冊）
-- [ ] 已知權限缺口：equipment 的 RLS 目前讓任何 member 都能 update 整筆資料
-  （原本設計是給租借狀態切換用），理論上一般社員也能透過 API 改器材名稱/型號，
-  之後應該用欄位層級的 GRANT 限制只有 admin 能改名稱等基本資料
+- [x] 首頁 Hero 動態照片：後台可指定「精選圖」，沒指定時 fallback 抓最新一張
+- [x] 相簿真的檔案上傳（Supabase Storage，公開讀取、只有 admin 能上傳/刪除），
+  仍保留貼圖片網址的選項（外部連結、或先傳到別的圖床再貼連結時可用）
+- [x] 器材租借按鈕真的動作：租借會寫入 current_holder/due_date，
+  歸還只有持有人自己看得到按鈕（其他人看到的是「目前由其他社員借用中」）
+- [x] 登出按鈕
+- [x] 忘記密碼流程：/forgot-password 申請信、/reset-password 設新密碼
+- [x] 學號唯一性：前端送出前先用 RPC 檢查給友善錯誤訊息，
+  資料庫也加了 unique constraint 保底，兩層都會擋
+- [x] equipment 欄位層級保護：改用 trigger，非 admin 更新器材時
+  如果動到 name/model/category/asset_code 會直接被拒絕，
+  租借相關欄位（status/current_holder/due_date）不受影響
+- [ ] 相簿刪除時沒有一併清掉 Storage 裡的實體檔案（只刪資料庫那筆），
+  刪除多了 Storage 空間會有孤兒檔案，之後可以補
+- [ ] Resend 通知信還沒真的設定 secrets／deploy（notify-admin function 還沒接上真實 API key）
 
 ## 部署
 

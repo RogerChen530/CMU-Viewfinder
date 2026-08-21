@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Nav from "../components/Nav.jsx";
 import Hero from "../components/Hero.jsx";
 import EquipmentCard from "../components/EquipmentCard.jsx";
@@ -10,9 +10,10 @@ export default function Home({ user, role }) {
   const canBorrow = !!user;
   const [equipment, setEquipment] = useState([]);
   const [photos, setPhotos] = useState([]);
+  const [heroPhoto, setHeroPhoto] = useState(null);
   const [announcements, setAnnouncements] = useState([]);
 
-  useEffect(() => {
+  const loadEquipment = useCallback(() => {
     supabase
       .from("equipment")
       .select("*")
@@ -22,6 +23,10 @@ export default function Home({ user, role }) {
         if (error) console.error("讀取器材失敗：", error);
         setEquipment(data ?? []);
       });
+  }, []);
+
+  useEffect(() => {
+    loadEquipment();
 
     supabase
       .from("photos")
@@ -33,6 +38,29 @@ export default function Home({ user, role }) {
         setPhotos(data ?? []);
       });
 
+    // Hero 圖：優先用後台指定的精選圖，沒有的話 fallback 抓最新一張
+    supabase
+      .from("photos")
+      .select("*")
+      .eq("is_featured", true)
+      .limit(1)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("讀取精選圖失敗：", error);
+          return;
+        }
+        if (data && data.length > 0) {
+          setHeroPhoto(data[0]);
+        } else {
+          supabase
+            .from("photos")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .then(({ data: latest }) => setHeroPhoto(latest?.[0] ?? null));
+        }
+      });
+
     supabase
       .from("announcements")
       .select("*")
@@ -42,14 +70,35 @@ export default function Home({ user, role }) {
         if (error) console.error("讀取公告失敗：", error);
         setAnnouncements(data ?? []);
       });
-  }, []);
+  }, [loadEquipment]);
+
+  async function handleToggle(item) {
+    if (!user) return;
+
+    if (item.status === "available") {
+      const dueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const { error } = await supabase
+        .from("equipment")
+        .update({ status: "rented", current_holder: user.id, due_date: dueDate })
+        .eq("id", item.id);
+      if (error) console.error("租借失敗：", error);
+    } else if (item.current_holder === user.id) {
+      const { error } = await supabase
+        .from("equipment")
+        .update({ status: "available", current_holder: null, due_date: null })
+        .eq("id", item.id);
+      if (error) console.error("歸還失敗：", error);
+    }
+
+    loadEquipment();
+  }
 
   const availableCount = equipment.filter((i) => i.status === "available").length;
 
   return (
     <div>
       <Nav user={user} role={role} />
-      <Hero />
+      <Hero photo={heroPhoto} />
 
       <div className="mt-16">
         <Seam />
@@ -85,7 +134,13 @@ export default function Home({ user, role }) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {equipment.map((item) => (
-              <EquipmentCard key={item.id} item={item} canBorrow={canBorrow} onToggle={() => {}} />
+              <EquipmentCard
+                key={item.id}
+                item={item}
+                canBorrow={canBorrow}
+                isHolder={item.current_holder === user?.id}
+                onToggle={handleToggle}
+              />
             ))}
           </div>
         )}

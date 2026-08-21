@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Nav from "../components/Nav.jsx";
 import EquipmentCard from "../components/EquipmentCard.jsx";
 import { Mono } from "../components/ui.jsx";
@@ -9,7 +9,7 @@ export default function Equipment({ user, role }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     supabase
       .from("equipment")
       .select("*")
@@ -20,6 +20,31 @@ export default function Equipment({ user, role }) {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function handleToggle(item) {
+    if (!user) return;
+
+    if (item.status === "available") {
+      const dueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const { error } = await supabase
+        .from("equipment")
+        .update({ status: "rented", current_holder: user.id, due_date: dueDate })
+        .eq("id", item.id);
+      if (error) console.error("租借失敗：", error);
+    } else if (item.current_holder === user.id) {
+      const { error } = await supabase
+        .from("equipment")
+        .update({ status: "available", current_holder: null, due_date: null })
+        .eq("id", item.id);
+      if (error) console.error("歸還失敗：", error);
+    }
+
+    load();
+  }
 
   const availableCount = items.filter((i) => i.status === "available").length;
 
@@ -45,7 +70,13 @@ export default function Equipment({ user, role }) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {items.map((item) => (
-              <EquipmentCard key={item.id} item={item} canBorrow={canBorrow} onToggle={() => {}} />
+              <EquipmentCard
+                key={item.id}
+                item={item}
+                canBorrow={canBorrow}
+                isHolder={item.current_holder === user?.id}
+                onToggle={handleToggle}
+              />
             ))}
           </div>
         )}

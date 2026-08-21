@@ -1,7 +1,7 @@
 import React from "react";
 import { Mono } from "./ui.jsx";
 
-export default function EquipmentCard({ item, canBorrow, onToggle }) {
+export default function EquipmentCard({ item, canBorrow, isHolder, onToggle }) {
   const available = item.status === "available";
 
   return (
@@ -24,25 +24,40 @@ export default function EquipmentCard({ item, canBorrow, onToggle }) {
         </div>
         <div className="flex justify-between">
           <span className="text-ash">{available ? "持有人" : "歸還日"}</span>
-          <span>{available ? item.current_holder || "—" : item.due_date || "—"}</span>
+          <span>{available ? "—" : item.due_date || "—"}</span>
         </div>
       </div>
 
-      {canBorrow ? (
+      {available && canBorrow && (
         <button
           onClick={() => onToggle(item)}
           className="mt-4 w-full text-sm py-2.5 rounded bg-moss text-paper font-medium"
         >
-          {available ? "租借 7 天" : "歸還器材"}
+          租借 7 天
         </button>
-      ) : available ? (
+      )}
+
+      {available && !canBorrow && (
         <button
           onClick={() => onToggle(item)}
           className="mt-4 w-full text-sm py-2.5 rounded border border-seam text-ash"
         >
           登入以租借
         </button>
-      ) : null}
+      )}
+
+      {!available && isHolder && (
+        <button
+          onClick={() => onToggle(item)}
+          className="mt-4 w-full text-sm py-2.5 rounded bg-moss text-paper font-medium"
+        >
+          歸還器材
+        </button>
+      )}
+
+      {!available && !isHolder && (
+        <p className="mt-4 text-xs text-ash text-center">目前由其他社員借用中</p>
+      )}
     </div>
   );
 }

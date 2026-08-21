@@ -27,6 +27,17 @@ export default function Register() {
       return;
     }
 
+    const { data: exists, error: checkError } = await supabase.rpc("student_id_exists", {
+      sid: studentId,
+    });
+
+    if (checkError) {
+      console.error("學號檢查失敗：", checkError);
+    } else if (exists) {
+      setError("此學號已經註冊過，請確認學號是否正確");
+      return;
+    }
+
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -34,7 +45,7 @@ export default function Register() {
     });
 
     if (signUpError) {
-      setError("註冊失敗，請確認 Email 是否已被使用");
+      setError(signUpError.message?.includes("學號") ? signUpError.message : "註冊失敗，請確認 Email 是否已被使用");
       return;
     }
 

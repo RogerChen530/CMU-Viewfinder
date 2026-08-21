@@ -1,8 +1,16 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import NotificationBell from "./NotificationBell.jsx";
+import { supabase } from "../lib/supabaseClient.js";
 
 export default function Nav({ user, role }) {
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    navigate("/");
+  }
+
   return (
     <nav className="flex justify-between items-center px-10 py-7">
       <Link to="/" className="font-display font-semibold text-[19px]">
@@ -22,9 +30,15 @@ export default function Nav({ user, role }) {
       <div className="flex items-center gap-3">
         {user && <NotificationBell />}
         {user ? (
-          <Link to="/account" className="text-sm border border-seam px-4 py-2 rounded">
-            {user.email}
-          </Link>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-ash hidden md:inline">{user.email}</span>
+            <button
+              onClick={handleLogout}
+              className="text-sm border border-seam px-4 py-2 rounded"
+            >
+              登出
+            </button>
+          </div>
         ) : (
           <Link to="/login" className="text-sm border border-seam px-4 py-2 rounded">
             會員登入
