@@ -22,7 +22,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-paper px-6">
       <form onSubmit={handleSubmit} className="w-full max-w-sm border border-seam rounded p-8">
-        <h1 className="font-display text-xl font-medium mb-6">會員登入</h1>
+        <h1 className="font-display text-xl font-medium mb-6">社員登入</h1>
 
         <label className="block text-xs text-ash mb-1">Email</label>
         <input

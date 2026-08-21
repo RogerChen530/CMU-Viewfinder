@@ -11,9 +11,19 @@ function getGreeting() {
   return "晚安";
 }
 
+const links = [
+  { to: "/", label: "首頁" },
+  { to: "/equipment", label: "器材" },
+  { to: "/gallery", label: "相簿" },
+  { to: "/news", label: "消息" },
+  { to: "/team", label: "社員" },
+  { to: "/projects", label: "專案" },
+];
+
 export default function Nav({ user, role }) {
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -32,46 +42,122 @@ export default function Nav({ user, role }) {
   }, [user]);
 
   async function handleLogout() {
+    setMobileOpen(false);
     await supabase.auth.signOut();
     navigate("/");
   }
 
+  function closeMobile() {
+    setMobileOpen(false);
+  }
+
   return (
-    <nav className="flex justify-between items-center px-10 py-7">
-      <Link to="/" className="font-display font-semibold text-[19px]">
-        CMU <span className="text-moss">Viewfinder</span>
-      </Link>
-      <div className="flex gap-8 text-sm text-ash items-center">
-        <Link to="/" className="hover:text-ink">首頁</Link>
-        <Link to="/equipment" className="hover:text-ink">器材</Link>
-        <Link to="/gallery" className="hover:text-ink">相簿</Link>
-        <Link to="/news" className="hover:text-ink">消息</Link>
-        <Link to="/team" className="hover:text-ink">社員</Link>
-        <Link to="/projects" className="hover:text-ink">專案</Link>
-        {role === "admin" && (
-          <Link to="/admin" className="hover:text-ink text-moss">管理</Link>
-        )}
-      </div>
-      <div className="flex items-center gap-3">
-        {user && <NotificationBell />}
-        {user ? (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-ash hidden lg:inline">
-              {getGreeting()}，{displayName ?? "..."}
-            </span>
-            <Link to="/account" className="text-sm border border-seam px-4 py-2 rounded">
-              維護個人資料
+    <nav className="px-6 md:px-10 py-5 md:py-7">
+      <div className="flex justify-between items-center">
+        <Link to="/" className="font-display font-semibold text-[19px]" onClick={closeMobile}>
+          CMU <span className="text-moss">Viewfinder</span>
+        </Link>
+
+        <div className="hidden md:flex gap-8 text-sm text-ash items-center">
+          {links.map((l) => (
+            <Link key={l.to} to={l.to} className="hover:text-ink">
+              {l.label}
             </Link>
-            <button onClick={handleLogout} className="text-sm border border-seam px-4 py-2 rounded">
-              登出
-            </button>
-          </div>
-        ) : (
-          <Link to="/login" className="text-sm border border-seam px-4 py-2 rounded">
-            會員登入
-          </Link>
-        )}
+          ))}
+          {role === "admin" && (
+            <Link to="/admin" className="hover:text-ink text-moss">管理</Link>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 md:gap-3">
+          {user && <NotificationBell />}
+
+          {user ? (
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-sm text-ash hidden lg:inline">
+                {getGreeting()}，{displayName ?? "..."}
+              </span>
+              <Link to="/account" className="text-sm border border-seam px-4 py-2 rounded">
+                維護個人資料
+              </Link>
+              <button onClick={handleLogout} className="text-sm border border-seam px-4 py-2 rounded">
+                登出
+              </button>
+            </div>
+          ) : (
+            <Link to="/login" className="hidden md:inline text-sm border border-seam px-4 py-2 rounded">
+              社員登入
+            </Link>
+          )}
+
+          <button
+            onClick={() => setMobileOpen((o) => !o)}
+            className="md:hidden w-9 h-9 flex items-center justify-center border border-seam rounded"
+            aria-label={mobileOpen ? "關閉選單" : "開啟選單"}
+          >
+            {mobileOpen ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M3 6h18M3 12h18M3 18h18" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
+
+      {mobileOpen && (
+        <div className="md:hidden mt-5 pt-4 border-t border-seam flex flex-col gap-1">
+          {links.map((l) => (
+            <Link
+              key={l.to}
+              to={l.to}
+              onClick={closeMobile}
+              className="py-2.5 text-sm text-ash"
+            >
+              {l.label}
+            </Link>
+          ))}
+          {role === "admin" && (
+            <Link to="/admin" onClick={closeMobile} className="py-2.5 text-sm text-moss">
+              管理
+            </Link>
+          )}
+
+          <div className="mt-2 pt-4 border-t border-seam flex flex-col gap-2.5">
+            {user ? (
+              <>
+                <span className="text-xs text-ash">
+                  {getGreeting()}，{displayName ?? "..."}
+                </span>
+                <Link
+                  to="/account"
+                  onClick={closeMobile}
+                  className="text-sm border border-seam px-4 py-2.5 rounded text-center"
+                >
+                  維護個人資料
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm border border-seam px-4 py-2.5 rounded"
+                >
+                  登出
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                onClick={closeMobile}
+                className="text-sm border border-seam px-4 py-2.5 rounded text-center"
+              >
+                社員登入
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

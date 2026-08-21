@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient.js";
+import TurnstileWidget from "../components/TurnstileWidget.jsx";
 
 function validatePassword(pwd) {
   if (pwd.length < 10) return "密碼至少需要 10 碼";
@@ -15,7 +16,15 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState(null);
+  const [widgetKey, setWidgetKey] = useState(0); // 改變這個值可以強制重新渲染 widget
   const navigate = useNavigate();
+
+  function resetTurnstile() {
+    setTurnstileToken(null);
+    setWidgetKey((k) => k + 1);
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -27,6 +36,25 @@ export default function Register() {
       return;
     }
 
+    if (!turnstileToken) {
+      setError("請先完成人機驗證");
+      return;
+    }
+
+    setSubmitting(true);
+
+    const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
+      "verify-turnstile",
+      { body: { token: turnstileToken } }
+    );
+
+    if (verifyError || !verifyResult?.success) {
+      setError("人機驗證失敗，請重新嘗試");
+      resetTurnstile();
+      setSubmitting(false);
+      return;
+    }
+
     const { data: exists, error: checkError } = await supabase.rpc("student_id_exists", {
       sid: studentId,
     });
@@ -35,6 +63,8 @@ export default function Register() {
       console.error("學號檢查失敗：", checkError);
     } else if (exists) {
       setError("此學號已經註冊過，請確認學號是否正確");
+      resetTurnstile();
+      setSubmitting(false);
       return;
     }
 
@@ -44,8 +74,11 @@ export default function Register() {
       options: { data: { student_id: studentId, verified: false } },
     });
 
+    setSubmitting(false);
+
     if (signUpError) {
       setError(signUpError.message?.includes("學號") ? signUpError.message : "註冊失敗，請確認 Email 是否已被使用");
+      resetTurnstile();
       return;
     }
 
@@ -107,10 +140,18 @@ export default function Register() {
         />
         <p className="text-[11px] text-ash mb-4">至少 10 碼，需同時包含英文字母與數字</p>
 
+        <div className="mb-4">
+          <TurnstileWidget key={widgetKey} onVerify={setTurnstileToken} onExpire={() => setTurnstileToken(null)} />
+        </div>
+
         {error && <p className="text-xs text-red-700 mb-3">{error}</p>}
 
-        <button type="submit" className="w-full bg-moss text-paper text-sm py-2.5 rounded font-medium">
-          送出申請
+        <button
+          type="submit"
+          disabled={submitting || !turnstileToken}
+          className="w-full bg-moss text-paper text-sm py-2.5 rounded font-medium disabled:opacity-50"
+        >
+          {submitting ? "送出中..." : "送出申請"}
         </button>
 
         <p className="text-xs text-ash mt-4 text-center">

@@ -42,7 +42,7 @@ export default function Projects({ user, role }) {
             </p>
             <div className="flex gap-3">
               <Link to="/login" className="text-sm px-5 py-3 rounded bg-moss text-paper font-medium">
-                會員登入
+                社員登入
               </Link>
               <Link to="/register" className="text-sm px-5 py-3 rounded border border-seam">
                 申請加入

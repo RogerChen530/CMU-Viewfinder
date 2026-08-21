@@ -46,7 +46,35 @@ supabase functions deploy notify-admin
 **5. 手動把自己升級成 admin**
 第一個帳號註冊完，role 預設是 `pending`。去 Supabase 後台 Table Editor → `profiles` 表，把自己那筆的 `role` 手動改成 `admin`，之後就能透過後台審核其他人、或未來做的管理頁面來交接。
 
+## Cloudflare Turnstile 設定步驟（註冊防機器人）
+
+**1. Site Key 放進本地開發環境**
+`.env.local` 加一行：
+```
+VITE_TURNSTILE_SITE_KEY=你的site_key
+```
+
+**2. Secret Key 只透過 CLI 設定，絕對不要寫進任何檔案**
+```bash
+supabase secrets set TURNSTILE_SECRET_KEY=你的secret_key
+supabase functions deploy verify-turnstile
+```
+
+**3. 正式部署也要加這個 Secret**
+去 repo 的 Settings → Secrets and variables → Actions，新增一筆：
+- `VITE_TURNSTILE_SITE_KEY`
+
+（Site Key 是公開的，可以放心當 GitHub Secret；Secret Key 完全不會出現在前端或 CI，只存在 Supabase Edge Function 裡）
+
 ## 目前進度
+
+- [x] 「會員登入」統一改成「社員登入」
+- [x] 社員列表開放給訪客瀏覽，分層顯示：訪客只看照片/名字/IG，
+  登入的 member/admin 才多看到聯絡 Email（另開 public_member_directory
+  視圖，DB 層面就不曝露 email 給訪客，不是前端擋一擋而已）
+- [x] 手機版導覽列改成漢堡選單，小螢幕不再擠成一團
+- [x] 註冊頁接上 Cloudflare Turnstile 人機驗證，token 送到
+  verify-turnstile Edge Function 做伺服器端驗證，通過才真的送出註冊
 
 - [x] 首頁視覺骨架（Hero / 器材卡片 / 相簿）
 - [x] 登入頁
