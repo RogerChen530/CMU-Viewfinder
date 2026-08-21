@@ -70,17 +70,21 @@ export default function Team({ user, role }) {
             {members.map((m) => {
               const name = m.display_name || m.real_name || "神秘客";
               return (
-                <div key={m.id} className="border border-seam rounded p-5 flex flex-col items-center text-center">
-                  <Avatar url={m.avatar_url} size={72} alt={name} />
-                  <p className="text-sm font-medium mt-3">
-                    {name}
-                    {m.id === user.id && <span className="text-ash text-xs ml-1">(你)</span>}
-                  </p>
-                  <Mono className="mt-1">{m.role === "admin" ? "管理員" : "社員"}</Mono>
-                  <div className="mt-3 flex flex-col gap-1 text-xs text-ash w-full">
-                    {m.contact_email && <span className="truncate">{m.contact_email}</span>}
-                    {m.ig_id && <span>@{m.ig_id}</span>}
-                    {!m.contact_email && !m.ig_id && <span>—</span>}
+                <div key={m.id} className="border border-seam rounded overflow-hidden flex flex-col">
+                  <div className="bg-ink text-paper text-center py-3 px-2">
+                    <p className="text-sm font-medium truncate">
+                      {name}
+                      {m.id === user.id && <span className="text-paper/60 text-xs ml-1">(你)</span>}
+                    </p>
+                  </div>
+                  <Avatar url={m.avatar_url} shape="rect" alt={name} className="w-full aspect-[4/5]" />
+                  <div className="p-4 text-center">
+                    <Mono>{m.role === "admin" ? "管理員" : "社員"}</Mono>
+                    <div className="mt-2 flex flex-col gap-1 text-xs text-ash">
+                      {m.contact_email && <span className="truncate">{m.contact_email}</span>}
+                      {m.ig_id && <span>@{m.ig_id}</span>}
+                      {!m.contact_email && !m.ig_id && <span>—</span>}
+                    </div>
                   </div>
                 </div>
               );

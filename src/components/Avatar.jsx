@@ -1,7 +1,8 @@
 import React from "react";
 
-export default function Avatar({ url, size = 40, alt = "" }) {
-  const style = { width: size, height: size };
+export default function Avatar({ url, size = 40, alt = "", shape = "circle", className = "" }) {
+  const shapeClass = shape === "circle" ? "rounded-full" : "rounded";
+  const style = shape === "circle" ? { width: size, height: size } : undefined;
 
   if (url) {
     return (
@@ -9,7 +10,7 @@ export default function Avatar({ url, size = 40, alt = "" }) {
         src={url}
         alt={alt}
         style={style}
-        className="rounded-full object-cover border border-seam shrink-0"
+        className={`${shapeClass} object-cover border border-seam shrink-0 ${className}`}
       />
     );
   }
@@ -17,11 +18,11 @@ export default function Avatar({ url, size = 40, alt = "" }) {
   return (
     <div
       style={style}
-      className="rounded-full bg-concrete border border-seam flex items-center justify-center shrink-0"
+      className={`${shapeClass} bg-concrete border border-seam flex items-center justify-center shrink-0 ${className}`}
     >
       <svg
-        width={size * 0.5}
-        height={size * 0.5}
+        width={shape === "circle" ? size * 0.5 : 40}
+        height={shape === "circle" ? size * 0.5 : 40}
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
