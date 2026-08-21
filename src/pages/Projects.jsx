@@ -4,8 +4,8 @@ import Nav from "../components/Nav.jsx";
 import { Mono } from "../components/ui.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 
-export default function Team({ user, role }) {
-  const [members, setMembers] = useState([]);
+export default function Projects({ user, role }) {
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,13 +16,12 @@ export default function Team({ user, role }) {
 
     setLoading(true);
     supabase
-      .from("profiles")
-      .select("id, student_id, role, created_at")
-      .in("role", ["member", "admin"])
-      .order("created_at", { ascending: true })
+      .from("projects")
+      .select("*")
+      .order("created_at", { ascending: false })
       .then(({ data, error }) => {
-        if (error) console.error("讀取社員名單失敗：", error);
-        setMembers(data ?? []);
+        if (error) console.error("讀取 projects 失敗：", error);
+        setProjects(data ?? []);
         setLoading(false);
       });
   }, [user, role]);
@@ -32,14 +31,14 @@ export default function Team({ user, role }) {
       <Nav user={user} role={role} />
       <section className="px-10 py-16">
         <div className="flex justify-between items-baseline mb-10">
-          <h1 className="font-display text-3xl font-medium">社員</h1>
-          <Mono>member roster</Mono>
+          <h1 className="font-display text-3xl font-medium">專案</h1>
+          <Mono>teamwork hub</Mono>
         </div>
 
         {!user && (
           <div className="max-w-md">
             <p className="text-ash text-sm mb-5">
-              社員名單只開放給審核通過的社員瀏覽，訪客無法查看這裡的內容。
+              專案頁只開放給審核通過的社員瀏覽，訪客無法查看這裡的內容。
             </p>
             <div className="flex gap-3">
               <Link to="/login" className="text-sm px-5 py-3 rounded bg-moss text-paper font-medium">
@@ -57,23 +56,20 @@ export default function Team({ user, role }) {
         {user && role === "pending" && (
           <div className="max-w-md border border-seam rounded p-5">
             <p className="text-sm">你的帳號正在等候管理員審核學生身份。</p>
-            <p className="text-ash text-xs mt-2">審核通過後即可看到社員名單與參與器材租借。</p>
+            <p className="text-ash text-xs mt-2">審核通過後即可看到目前進行中的專案。</p>
           </div>
         )}
 
         {user && (role === "member" || role === "admin") && (
-          <div className="flex flex-col gap-2 max-w-lg">
-            {loading && <p className="text-ash text-sm">載入中...</p>}
-            {!loading && members.length === 0 && (
-              <p className="text-ash text-sm">目前還沒有其他社員。</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {loading && <p className="text-ash text-sm col-span-2">載入中...</p>}
+            {!loading && projects.length === 0 && (
+              <p className="text-ash text-sm col-span-2">目前還沒有進行中的專案。</p>
             )}
-            {members.map((m) => (
-              <div key={m.id} className="flex justify-between items-center border border-seam rounded p-4">
-                <p className="text-sm font-medium">
-                  學號：{m.student_id}
-                  {m.id === user.id && <span className="text-ash text-xs ml-2">(你)</span>}
-                </p>
-                <Mono>{m.role === "admin" ? "管理員" : "社員"}</Mono>
+            {projects.map((p) => (
+              <div key={p.id} className="border border-seam rounded p-5">
+                <h3 className="font-display text-lg font-medium mb-2">{p.title}</h3>
+                <p className="text-ash text-sm">{p.description}</p>
               </div>
             ))}
           </div>

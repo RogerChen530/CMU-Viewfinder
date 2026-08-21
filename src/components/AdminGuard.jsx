@@ -23,7 +23,7 @@ export default function AdminGuard({ user, role, title, children }) {
       <Nav user={user} role={role} />
       <section className="px-10 py-16">
         <div className="flex justify-between items-baseline mb-2">
-          <h1 className="font-display text-3xl font-medium">管理後台</h1>
+          <h1 className="font-display text-3xl font-medium">管理</h1>
         </div>
         <AdminNav />
         <h2 className="font-display text-xl font-medium mb-6">{title}</h2>

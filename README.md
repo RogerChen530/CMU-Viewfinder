@@ -57,6 +57,10 @@ supabase functions deploy notify-admin
   /admin/gallery（相簿新增/刪除，目前是貼圖片網址，還沒做真的檔案上傳）、
   /admin/announcements（公告發布/刪除）
 - [x] 首頁 / 器材頁 / 相簿頁改接真實 Supabase 資料
+- [x] /news 消息頁（公開，列出所有公告；通知鈴只顯示近 30 天，這裡是完整列表）
+- [x] /team 改為社員名單（原本顯示專案的內容搬到 /projects）
+- [x] /projects 專案頁（member/admin 限定，同原本 /team 的權限邏輯）
+- [x] 管理連結文字從「管理後台」改成「管理」
 - [x] 公告功能 + 導覽列通知鈴（顯示最近 30 天公告，未讀狀態存在瀏覽器 localStorage，不跨裝置同步）
 - [ ] 相簿真的檔案上傳（Supabase Storage），現在只能貼網址
 - [ ] 器材租借按鈕還沒接上真的 update（按下去沒有動作）

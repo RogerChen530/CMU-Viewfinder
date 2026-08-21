@@ -7,6 +7,8 @@ import Register from "./pages/Register.jsx";
 import Equipment from "./pages/Equipment.jsx";
 import Gallery from "./pages/Gallery.jsx";
 import Team from "./pages/Team.jsx";
+import Projects from "./pages/Projects.jsx";
+import News from "./pages/News.jsx";
 import Admin from "./pages/Admin.jsx";
 import AdminEquipment from "./pages/AdminEquipment.jsx";
 import AdminGallery from "./pages/AdminGallery.jsx";
@@ -55,6 +57,8 @@ export default function App() {
       <Route path="/equipment" element={<Equipment user={user} role={role} />} />
       <Route path="/gallery" element={<Gallery user={user} role={role} />} />
       <Route path="/team" element={<Team user={user} role={role} />} />
+      <Route path="/projects" element={<Projects user={user} role={role} />} />
+      <Route path="/news" element={<News user={user} role={role} />} />
       <Route path="/admin" element={<Admin user={user} role={role} />} />
       <Route path="/admin/equipment" element={<AdminEquipment user={user} role={role} />} />
       <Route path="/admin/gallery" element={<AdminGallery user={user} role={role} />} />

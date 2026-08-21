@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient.js";
 
 const LAST_SEEN_KEY = "cmu-viewfinder:announcements-last-seen";
@@ -85,6 +86,13 @@ export default function NotificationBell() {
               </p>
             </div>
           ))}
+          <Link
+            to="/news"
+            onClick={() => setOpen(false)}
+            className="block text-center text-sm py-3 text-moss hover:underline"
+          >
+            查看全部消息
+          </Link>
         </div>
       )}
     </div>

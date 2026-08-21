@@ -12,9 +12,11 @@ export default function Nav({ user, role }) {
         <Link to="/" className="hover:text-ink">首頁</Link>
         <Link to="/equipment" className="hover:text-ink">器材</Link>
         <Link to="/gallery" className="hover:text-ink">相簿</Link>
+        <Link to="/news" className="hover:text-ink">消息</Link>
         <Link to="/team" className="hover:text-ink">社員</Link>
+        <Link to="/projects" className="hover:text-ink">專案</Link>
         {role === "admin" && (
-          <Link to="/admin" className="hover:text-ink text-moss">管理後台</Link>
+          <Link to="/admin" className="hover:text-ink text-moss">管理</Link>
         )}
       </div>
       <div className="flex items-center gap-3">
