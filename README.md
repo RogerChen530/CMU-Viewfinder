@@ -54,8 +54,12 @@ supabase functions deploy notify-admin
 - [x] Supabase 資料表 schema（profiles / equipment / photo / project）與 RLS 權限規則
 - [x] 學生證審核流程：註冊時寫入 pending profile + 寄通知信給管理員（Edge Function）
 - [ ] 管理員審核/交接後台頁面（目前用 Supabase Table Editor 手動審，之後可以做成網站內的頁面）
-- [ ] 器材租借真實資料串接（目前是樣本資料，equipment 表已就緒）
-- [ ] 相簿真實圖片串接（photos 表已就緒）
+- [ ] 器材租借真實資料串接（equipment 頁目前是樣本資料，equipment 表已就緒）
+- [ ] 相簿真實圖片串接（gallery 頁目前是樣本資料，photos 表已就緒，圖片上傳/Storage 待設定）
+- [x] /equipment /gallery /team 頁面（team 頁已接真實 Supabase 查詢，示範三層權限 RLS）
+- [ ] 登出按鈕
+- [ ] 忘記密碼流程
+- [ ] 學號唯一性檢查（目前同一個學號可以重複註冊）
 
 ## 部署
 

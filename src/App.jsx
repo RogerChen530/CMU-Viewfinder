@@ -4,6 +4,9 @@ import { supabase } from "./lib/supabaseClient.js";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
+import Equipment from "./pages/Equipment.jsx";
+import Gallery from "./pages/Gallery.jsx";
+import Team from "./pages/Team.jsx";
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -25,7 +28,10 @@ export default function App() {
       <Route path="/" element={<Home user={user} />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      {/* TODO: /equipment /gallery /team /account 頁面待補 */}
+      <Route path="/equipment" element={<Equipment user={user} />} />
+      <Route path="/gallery" element={<Gallery user={user} />} />
+      <Route path="/team" element={<Team user={user} />} />
+      {/* TODO: /account 帳號設定頁待補 */}
     </Routes>
   );
 }
