@@ -4,54 +4,31 @@ import Nav from "../components/Nav.jsx";
 import { Mono } from "../components/ui.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 
-export default function Team({ user }) {
-  const [role, setRole] = useState(null);
+export default function Team({ user, role }) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (!user || (role !== "member" && role !== "admin")) {
       setLoading(false);
       return;
     }
 
-    async function load() {
-      setLoading(true);
-
-      // 讀自己的 role（RLS: "read own profile" 允許）
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError) {
-        console.error("讀取 profile 失敗：", profileError);
-      }
-
-      setRole(profile?.role ?? "pending");
-
-      // projects 的 RLS 只讓 member/admin 讀得到，
-      // 如果 role 還是 pending，這裡會回空陣列（RLS 擋下來），不會噴錯。
-      const { data: projectData, error: projectError } = await supabase
-        .from("projects")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (projectError) {
-        console.error("讀取 projects 失敗：", projectError);
-      }
-
-      setProjects(projectData ?? []);
-      setLoading(false);
-    }
-
-    load();
-  }, [user]);
+    setLoading(true);
+    supabase
+      .from("projects")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (error) console.error("讀取 projects 失敗：", error);
+        setProjects(data ?? []);
+        setLoading(false);
+      });
+  }, [user, role]);
 
   return (
     <div>
-      <Nav user={user} />
+      <Nav user={user} role={role} />
       <section className="px-10 py-16">
         <div className="flex justify-between items-baseline mb-10">
           <h1 className="font-display text-3xl font-medium">社員專區</h1>
@@ -74,18 +51,19 @@ export default function Team({ user }) {
           </div>
         )}
 
-        {user && loading && <p className="text-ash text-sm">載入中...</p>}
+        {user && role === null && <p className="text-ash text-sm">載入中...</p>}
 
-        {user && !loading && role === "pending" && (
+        {user && role === "pending" && (
           <div className="max-w-md border border-seam rounded p-5">
             <p className="text-sm">你的帳號正在等候管理員審核學生身份。</p>
             <p className="text-ash text-xs mt-2">審核通過後即可看到社員專區的內容與參與器材租借。</p>
           </div>
         )}
 
-        {user && !loading && (role === "member" || role === "admin") && (
+        {user && (role === "member" || role === "admin") && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {projects.length === 0 && (
+            {loading && <p className="text-ash text-sm col-span-2">載入中...</p>}
+            {!loading && projects.length === 0 && (
               <p className="text-ash text-sm col-span-2">目前還沒有進行中的專案。</p>
             )}
             {projects.map((p) => (

@@ -53,13 +53,19 @@ supabase functions deploy notify-admin
 - [x] 註冊頁（含密碼規則：至少 10 碼、需含英文字母與數字；含學號欄位）
 - [x] Supabase 資料表 schema（profiles / equipment / photo / project）與 RLS 權限規則
 - [x] 學生證審核流程：註冊時寫入 pending profile + 寄通知信給管理員（Edge Function）
-- [ ] 管理員審核/交接後台頁面（目前用 Supabase Table Editor 手動審，之後可以做成網站內的頁面）
-- [ ] 器材租借真實資料串接（equipment 頁目前是樣本資料，equipment 表已就緒）
-- [ ] 相簿真實圖片串接（gallery 頁目前是樣本資料，photos 表已就緒，圖片上傳/Storage 待設定）
-- [x] /equipment /gallery /team 頁面（team 頁已接真實 Supabase 查詢，示範三層權限 RLS）
+- [x] 管理後台：/admin（審核申請、社員/管理員角色）、/admin/equipment（器材增刪改）、
+  /admin/gallery（相簿新增/刪除，目前是貼圖片網址，還沒做真的檔案上傳）、
+  /admin/announcements（公告發布/刪除）
+- [x] 首頁 / 器材頁 / 相簿頁改接真實 Supabase 資料
+- [x] 公告功能 + 導覽列通知鈴（顯示最近 30 天公告，未讀狀態存在瀏覽器 localStorage，不跨裝置同步）
+- [ ] 相簿真的檔案上傳（Supabase Storage），現在只能貼網址
+- [ ] 器材租借按鈕還沒接上真的 update（按下去沒有動作）
 - [ ] 登出按鈕
 - [ ] 忘記密碼流程
 - [ ] 學號唯一性檢查（目前同一個學號可以重複註冊）
+- [ ] 已知權限缺口：equipment 的 RLS 目前讓任何 member 都能 update 整筆資料
+  （原本設計是給租借狀態切換用），理論上一般社員也能透過 API 改器材名稱/型號，
+  之後應該用欄位層級的 GRANT 限制只有 admin 能改名稱等基本資料
 
 ## 部署
 
