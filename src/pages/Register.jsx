@@ -27,7 +27,7 @@ export default function Register() {
       return;
     }
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { student_id: studentId, verified: false } },
@@ -38,16 +38,13 @@ export default function Register() {
       return;
     }
 
-    const newUserId = data.user?.id;
-    if (newUserId) {
-      // 建立 pending 狀態的 profile（role 預設就是 pending，見 migration）
-      await supabase.from("profiles").insert({ id: newUserId, student_id: studentId });
-
-      // 通知管理員來審核
-      await supabase.functions.invoke("notify-admin", {
-        body: { email, studentId },
-      });
-    }
+    // profile 建立已改由資料庫 trigger（0002_handle_new_user_trigger.sql）自動處理，
+    // 前端不用也不該自己 insert（signUp 剛完成時通常還沒有登入 session，
+    // 手動 insert 會被 RLS 擋下來，靜默失敗）。
+    // 這裡只需要通知管理員來審核。
+    await supabase.functions.invoke("notify-admin", {
+      body: { email, studentId },
+    });
 
     setSubmitted(true);
   }
