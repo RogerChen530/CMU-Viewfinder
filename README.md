@@ -66,64 +66,9 @@ supabase functions deploy verify-turnstile
 
 （Site Key 是公開的，可以放心當 GitHub Secret；Secret Key 完全不會出現在前端或 CI，只存在 Supabase Edge Function 裡）
 
-## 目前進度
+## 功能與開發紀錄
 
-- [x] 「會員登入」統一改成「社員登入」
-- [x] 社員列表開放給訪客瀏覽，分層顯示：訪客只看照片/名字/IG，
-  登入的 member/admin 才多看到聯絡 Email（另開 public_member_directory
-  視圖，DB 層面就不曝露 email 給訪客，不是前端擋一擋而已）
-- [x] 手機版導覽列改成漢堡選單，小螢幕不再擠成一團
-- [x] 註冊頁接上 Cloudflare Turnstile 人機驗證，token 送到
-  verify-turnstile Edge Function 做伺服器端驗證，通過才真的送出註冊
-
-- [x] 首頁視覺骨架（Hero / 器材卡片 / 相簿）
-- [x] 登入頁
-- [x] 註冊頁（含密碼規則：至少 10 碼、需含英文字母與數字；含學號欄位）
-- [x] Supabase 資料表 schema（profiles / equipment / photo / project）與 RLS 權限規則
-- [x] 學生證審核流程：註冊時寫入 pending profile + 寄通知信給管理員（Edge Function）
-- [x] 管理後台：/admin（審核申請、社員/管理員角色）、/admin/equipment（器材增刪改）、
-  /admin/gallery（相簿新增/刪除，目前是貼圖片網址，還沒做真的檔案上傳）、
-  /admin/announcements（公告發布/刪除）
-- [x] 首頁 / 器材頁 / 相簿頁改接真實 Supabase 資料
-- [x] /news 消息頁（公開，列出所有公告；通知鈴只顯示近 30 天，這裡是完整列表）
-- [x] /team 改為社員名單（原本顯示專案的內容搬到 /projects）
-- [x] /projects 專案頁（member/admin 限定，同原本 /team 的權限邏輯）
-- [x] 管理連結文字從「管理後台」改成「管理」
-- [x] 公告功能 + 導覽列通知鈴（顯示最近 30 天公告，未讀狀態存在瀏覽器 localStorage，不跨裝置同步）
-- [x] 首頁 Hero 動態照片：後台可指定「精選圖」，沒指定時 fallback 抓最新一張
-- [x] 相簿真的檔案上傳（Supabase Storage，公開讀取、只有 admin 能上傳/刪除），
-  仍保留貼圖片網址的選項（外部連結、或先傳到別的圖床再貼連結時可用）
-- [x] 器材租借按鈕真的動作：租借會寫入 current_holder/due_date，
-  歸還只有持有人自己看得到按鈕（其他人看到的是「目前由其他社員借用中」）
-- [x] 登出按鈕
-- [x] 忘記密碼流程：/forgot-password 申請信、/reset-password 設新密碼
-- [x] 學號唯一性：前端送出前先用 RPC 檢查給友善錯誤訊息，
-  資料庫也加了 unique constraint 保底，兩層都會擋
-- [x] equipment 欄位層級保護：改用 trigger，非 admin 更新器材時
-  如果動到 name/model/category/asset_code 會直接被拒絕，
-  租借相關欄位（status/current_holder/due_date）不受影響
-- [x] /account 個人資料維護頁：大頭照上傳、真名、多個暱稱(可選要顯示哪個，預設真名)、
-  聯絡 Email、IG、電話。電話只有管理員看得到，社員名單不會顯示
-- [x] /team 社員名單改顯示大頭照/名字/Email/IG，改抓 member_directory
-  這個安全視圖，不會曝露學號跟電話（避免一般社員直接查表挖出敏感資料）
-- [x] 空資料的顯示規則：名字沒填顯示「神秘客」、聯絡方式留白就不顯示該行，
-  沒有大頭照時顯示預設空白頭像圖示，都不會出現 null/undefined 字樣
-- [x] 相簿燈箱：點擊照片展開全圖 + 詳細資訊（作者、拍攝條件、創作理念），
-  首頁跟 /gallery 都有，/admin/gallery 新增照片時可以填作者跟創作理念
-- [ ] 相簿刪除時沒有一併清掉 Storage 裡的實體檔案（只刪資料庫那筆），
-  頭像也是同樣狀況（換新大頭照，舊檔案不會自動清掉）
-- [ ] Resend 通知信還沒真的設定 secrets／deploy（notify-admin function 還沒接上真實 API key）
-- [x] 修正 pending 帳號看到租借按鈕但按下去靜默失敗的問題：
-  canBorrow 改成同時檢查 role 是不是 member/admin，不能只看有沒有登入
-- [x] 修正 Login/Register 頁面互相切換的連結：原本用原生 `<a href>`
-  會整頁跳轉到網域根目錄，在 GitHub Pages 這種部署在子路徑的環境
-  下會 404（本地開發因為根目錄本來就是 / 不會發現）。改用 React
-  Router 的 `<Link>` 走前端路由，正確接上子路徑
-- [x] 註冊頁新增「學生／外部人士」身份選擇：學生照舊填學號；
-  外部人士不用填學號（例如模特兒、業界攝影師），改由管理員在
-  後台另外判斷要不要核准。具體要用什麼方式驗證外部人士身份，
-  之後由社團自己決議，目前系統只負責讓他們能送出申請、並讓
-  admin 在待審核列表看得出這是「外部人士申請」
+完整的功能清單、開發歷史、已知限制，都放在 [`CHANGELOG.md`](./CHANGELOG.md)。這份 README 只放「怎麼把專案跑起來、怎麼部署」。
 
 ## 部署
 

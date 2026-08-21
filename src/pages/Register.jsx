@@ -165,12 +165,6 @@ export default function Register() {
           </>
         )}
 
-        {!isStudent && (
-          <p className="text-[11px] text-ash mb-4 border border-seam rounded p-3">
-            外部人士申請不需要填學號，送出後由社團管理員另外審核，具體審核方式依社團決議為準。
-          </p>
-        )}
-
         <label className="block text-xs text-ash mb-1">密碼</label>
         <input
           type="password"
