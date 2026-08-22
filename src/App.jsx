@@ -16,6 +16,7 @@ import Admin from "./pages/Admin.jsx";
 import AdminEquipment from "./pages/AdminEquipment.jsx";
 import AdminGallery from "./pages/AdminGallery.jsx";
 import AdminAnnouncements from "./pages/AdminAnnouncements.jsx";
+import AdminStorage from "./pages/AdminStorage.jsx";
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -69,6 +70,7 @@ export default function App() {
       <Route path="/admin/equipment" element={<AdminEquipment user={user} role={role} />} />
       <Route path="/admin/gallery" element={<AdminGallery user={user} role={role} />} />
       <Route path="/admin/announcements" element={<AdminAnnouncements user={user} role={role} />} />
+      <Route path="/admin/storage" element={<AdminStorage user={user} role={role} />} />
     </Routes>
   );
 }

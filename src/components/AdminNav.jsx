@@ -6,6 +6,7 @@ const tabs = [
   { to: "/admin/equipment", label: "器材" },
   { to: "/admin/gallery", label: "相簿" },
   { to: "/admin/announcements", label: "公告" },
+  { to: "/admin/storage", label: "容量" },
 ];
 
 export default function AdminNav() {

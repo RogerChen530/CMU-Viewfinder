@@ -69,6 +69,12 @@ CMU Viewfinder 的功能開發紀錄。設定/部署步驟請看 `README.md`。
 - `/admin/equipment` 器材新增/編輯/刪除
 - `/admin/gallery` 相簿新增/刪除
 - `/admin/announcements` 公告發布/刪除
+- `/admin/storage` 容量顯示頁：仿 macOS 磁碟空間那種分色讀條，
+  分別顯示資料庫（500MB 上限）跟檔案儲存空間（1GB 上限，拆相簿/
+  大頭照兩段）目前用量。數字即時查詢 Postgres 自己算出來
+  （pg_database_size + storage.objects 加總），不是走 Supabase
+  Management API（那把 token 權限等同整個帳號，風險太高，特意
+  避開）
 
 ## 介面 / 其他
 
