@@ -30,14 +30,41 @@ export default function Home({ user, role }) {
   useEffect(() => {
     loadEquipment();
 
+    // 首頁相簿：精選圖優先，不夠 6 張的話用最新上傳的補滿
     supabase
       .from("photos")
       .select("*")
+      .eq("is_featured", true)
       .order("created_at", { ascending: false })
-      .limit(3)
-      .then(({ data, error }) => {
-        if (error) console.error("讀取相簿失敗：", error);
-        setPhotos(data ?? []);
+      .limit(6)
+      .then(async ({ data: featured, error }) => {
+        if (error) {
+          console.error("讀取相簿失敗：", error);
+          return;
+        }
+
+        const featuredList = featured ?? [];
+        if (featuredList.length >= 6) {
+          setPhotos(featuredList.slice(0, 6));
+          return;
+        }
+
+        const excludeIds = featuredList.map((p) => p.id);
+        let query = supabase
+          .from("photos")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(6 - featuredList.length + excludeIds.length);
+
+        const { data: latest, error: latestError } = await query;
+        if (latestError) {
+          console.error("讀取相簿失敗：", latestError);
+          setPhotos(featuredList);
+          return;
+        }
+
+        const fill = (latest ?? []).filter((p) => !excludeIds.includes(p.id)).slice(0, 6 - featuredList.length);
+        setPhotos([...featuredList, ...fill]);
       });
 
     // Hero 圖：優先用後台指定的精選圖，沒有的話 fallback 抓最新一張
@@ -152,13 +179,13 @@ export default function Home({ user, role }) {
 
       <section className="px-10 py-16">
         <div className="flex justify-between items-baseline mb-8">
-          <h2 className="font-display text-2xl font-medium">近期作品</h2>
+          <h2 className="font-display text-2xl font-medium">Gallery</h2>
           <Mono>gallery</Mono>
         </div>
         {photos.length === 0 ? (
           <p className="text-ash text-sm">目前還沒有任何照片。</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {photos.map((p) => (
               <GalleryFrame
                 key={p.id}

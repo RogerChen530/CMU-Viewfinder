@@ -1,6 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import AdminGuard from "../components/AdminGuard.jsx";
 import { supabase } from "../lib/supabaseClient.js";
+
+// 名稱排序用的地區化比較器。JS 沒有「照注音排序」這個選項，
+// zh-Hant-u-co-pinyin 是效果最接近的替代方案（照發音順序排，
+// 同音字排列邏輯跟注音排序基本一致）。日文用 ja 地區設定，
+// 純漢字沒有標注讀音時沒辦法 100% 照五十音排，這是 Unicode
+// 排序技術本身的限制。英文照字母排序不受影響。
+const nameCollator = new Intl.Collator("zh-Hant-u-co-pinyin", {
+  numeric: true,
+  sensitivity: "base",
+});
+
+const DISPLAY_COUNT_OPTIONS = [10, 20, 50, 100];
 
 export default function AdminGallery({ user, role }) {
   const [photos, setPhotos] = useState([]);
@@ -9,6 +21,13 @@ export default function AdminGallery({ user, role }) {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+
+  // 篩選/排序控制
+  const [displayCount, setDisplayCount] = useState(20);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [sortBy, setSortBy] = useState("created_at"); // created_at | author | caption
+  const [sortDir, setSortDir] = useState("desc"); // asc | desc
 
   async function load() {
     setLoading(true);
@@ -21,6 +40,35 @@ export default function AdminGallery({ user, role }) {
   useEffect(() => {
     if (role === "admin") load();
   }, [role]);
+
+  const visiblePhotos = useMemo(() => {
+    let list = [...photos];
+
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      list = list.filter((p) => new Date(p.created_at) >= from);
+    }
+    if (dateTo) {
+      // 含當天整天
+      const to = new Date(dateTo);
+      to.setHours(23, 59, 59, 999);
+      list = list.filter((p) => new Date(p.created_at) <= to);
+    }
+
+    list.sort((a, b) => {
+      let result;
+      if (sortBy === "created_at") {
+        result = new Date(a.created_at) - new Date(b.created_at);
+      } else if (sortBy === "author") {
+        result = nameCollator.compare(a.author || "", b.author || "");
+      } else {
+        result = nameCollator.compare(a.caption || "", b.caption || "");
+      }
+      return sortDir === "asc" ? result : -result;
+    });
+
+    return list.slice(0, displayCount);
+  }, [photos, dateFrom, dateTo, sortBy, sortDir, displayCount]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -51,6 +99,8 @@ export default function AdminGallery({ user, role }) {
       image_url: imageUrl,
       caption: form.caption,
       exif: form.exif,
+      author: form.author,
+      description: form.description,
       uploaded_by: user.id,
     });
 
@@ -136,12 +186,87 @@ export default function AdminGallery({ user, role }) {
         </button>
       </form>
 
+      {/* 篩選/排序控制列 */}
+      <div className="flex flex-wrap gap-4 items-end mb-6 border border-seam rounded p-4">
+        <div>
+          <label className="block text-[11px] text-ash mb-1">顯示筆數</label>
+          <select
+            value={displayCount}
+            onChange={(e) => setDisplayCount(Number(e.target.value))}
+            className="border border-seam rounded px-2 py-1.5 text-sm"
+          >
+            {DISPLAY_COUNT_OPTIONS.map((n) => (
+              <option key={n} value={n}>{n} 張</option>
+            ))}
+            <option value={999999}>全部</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[11px] text-ash mb-1">上傳時間從</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="border border-seam rounded px-2 py-1.5 text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[11px] text-ash mb-1">到</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="border border-seam rounded px-2 py-1.5 text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[11px] text-ash mb-1">排序依據</label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="border border-seam rounded px-2 py-1.5 text-sm"
+          >
+            <option value="created_at">上傳時間</option>
+            <option value="author">作者</option>
+            <option value="caption">名稱</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[11px] text-ash mb-1">順序</label>
+          <select
+            value={sortDir}
+            onChange={(e) => setSortDir(e.target.value)}
+            className="border border-seam rounded px-2 py-1.5 text-sm"
+          >
+            <option value="desc">{sortBy === "created_at" ? "新到舊" : "Z到A / ㄦ到ㄅ"}</option>
+            <option value="asc">{sortBy === "created_at" ? "舊到新" : "A到Z / ㄅ到ㄦ"}</option>
+          </select>
+        </div>
+
+        {(dateFrom || dateTo) && (
+          <button
+            onClick={() => { setDateFrom(""); setDateTo(""); }}
+            className="text-xs text-ash border border-seam rounded px-3 py-1.5"
+          >
+            清除時間篩選
+          </button>
+        )}
+
+        <p className="text-[11px] text-ash ml-auto">
+          {visiblePhotos.length} / {photos.length} 張
+        </p>
+      </div>
+
       {loading ? (
         <p className="text-ash text-sm">載入中...</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {photos.length === 0 && <p className="text-ash text-sm col-span-3">目前沒有任何照片。</p>}
-          {photos.map((p) => (
+          {visiblePhotos.length === 0 && <p className="text-ash text-sm col-span-3">沒有符合條件的照片。</p>}
+          {visiblePhotos.map((p) => (
             <div key={p.id} className="border border-seam rounded overflow-hidden">
               <div className="relative">
                 <img src={p.image_url} alt={p.caption ?? ""} className="w-full aspect-[4/5] object-cover" />
@@ -152,7 +277,8 @@ export default function AdminGallery({ user, role }) {
                 )}
               </div>
               <div className="p-3">
-                <p className="text-xs text-ash mb-2">{p.caption || p.exif || "（無說明）"}</p>
+                <p className="text-xs text-ash mb-1">{p.caption || p.exif || "（無說明）"}</p>
+                {p.author && <p className="text-[11px] text-ash mb-2">作者：{p.author}</p>}
                 <div className="flex gap-2">
                   {!p.is_featured && (
                     <button

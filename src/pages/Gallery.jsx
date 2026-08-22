@@ -27,7 +27,7 @@ export default function Gallery({ user, role }) {
       <Nav user={user} role={role} />
       <section className="px-10 py-16">
         <div className="flex justify-between items-baseline mb-10">
-          <h1 className="font-display text-3xl font-medium">近期作品</h1>
+          <h1 className="font-display text-3xl font-medium">Gallery</h1>
           <Mono>gallery / {photos.length} photos</Mono>
         </div>
         {loading ? (
