@@ -10,9 +10,21 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
+// 同一個問題：瀏覽器跨網域打這支 function 之前會先送 OPTIONS
+// 預檢請求，沒有這組標頭會被瀏覽器直接擋下來，不分瀏覽器種類。
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
   try {
@@ -21,7 +33,7 @@ Deno.serve(async (req) => {
     if (!email || !studentId) {
       return new Response(JSON.stringify({ error: "缺少 email 或 studentId" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -53,18 +65,18 @@ Deno.serve(async (req) => {
       const text = await res.text();
       return new Response(JSON.stringify({ error: "寄信失敗", detail: text }), {
         status: 502,
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

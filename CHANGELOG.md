@@ -106,3 +106,11 @@ CMU Viewfinder 的功能開發紀錄。設定/部署步驟請看 `README.md`。
   壓縮，容量會撐得比想像快。討論過方向（前端上傳前壓縮／升級
   Supabase 付費方案／改用 Cloudflare R2），等你跟甲方討論出結果
   再處理
+- 修正 `verify-turnstile`、`notify-admin` 兩支 Edge Function 都缺
+  CORS 標頭：瀏覽器從 GitHub Pages 跨網域呼叫 Supabase Function
+  前會先送 OPTIONS 預檢請求，沒有 `Access-Control-Allow-Origin`
+  標頭會被瀏覽器直接擋下來，不分瀏覽器種類（一開始在 Safari 上
+  發現，一度誤以為是 Safari 相容性問題，後來在 Edge 測試才確認
+  是 CORS 設定漏掉，兩支 function 都補上）。這也代表在這次修正
+  之前，`notify-admin` 從註冊頁呼叫時可能一直悄悄失敗，因為
+  `Register.jsx` 沒有檢查這支呼叫的錯誤，不會顯示出來
