@@ -24,23 +24,6 @@ export default function Admin({ user, role }) {
     if (role === "admin") loadProfiles();
   }, [role]);
 
-  async function approve(id) {
-    setActioningId(id);
-    const { error } = await supabase.from("profiles").update({ role: "member" }).eq("id", id);
-    if (error) console.error("核准失敗：", error);
-    await loadProfiles();
-    setActioningId(null);
-  }
-
-  async function reject(id) {
-    if (!confirm("確定要拒絕這筆申請嗎？這會刪除該筆審核資料，且無法復原。")) return;
-    setActioningId(id);
-    const { error } = await supabase.from("profiles").delete().eq("id", id);
-    if (error) console.error("拒絕失敗：", error);
-    await loadProfiles();
-    setActioningId(null);
-  }
-
   async function setRole(id, newRole) {
     setActioningId(id);
     const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", id);
@@ -49,8 +32,22 @@ export default function Admin({ user, role }) {
     setActioningId(null);
   }
 
+  async function approve(id) {
+    await setRole(id, "member");
+  }
+
+  async function reject(id) {
+    if (!confirm("確定要拒絕這筆申請嗎？之後可以在「已拒絕」列表裡重新開放審核。")) return;
+    await setRole(id, "rejected");
+  }
+
+  async function reopen(id) {
+    await setRole(id, "pending");
+  }
+
   const pending = profiles.filter((p) => p.role === "pending");
-  const others = profiles.filter((p) => p.role !== "pending");
+  const rejected = profiles.filter((p) => p.role === "rejected");
+  const others = profiles.filter((p) => p.role === "member" || p.role === "admin");
 
   return (
     <AdminGuard user={user} role={role} title="審核與社員">
@@ -90,6 +87,34 @@ export default function Admin({ user, role }) {
               ))}
             </div>
           </div>
+
+          {rejected.length > 0 && (
+            <div className="mb-12">
+              <h3 className="font-display text-lg font-medium mb-2">已拒絕</h3>
+              <p className="text-ash text-xs mb-4">
+                拒絕錯了可以按「重新開放審核」，會把這筆送回待審核清單。
+              </p>
+              <div className="flex flex-col gap-3">
+                {rejected.map((p) => (
+                  <div key={p.id} className="flex justify-between items-center border border-seam rounded p-4">
+                    <div>
+                      <p className="text-sm font-medium">
+                        {p.student_id ? `學號：${p.student_id}` : "外部人士申請"}
+                      </p>
+                      <Mono>{new Date(p.created_at).toLocaleString("zh-TW")}</Mono>
+                    </div>
+                    <button
+                      disabled={actioningId === p.id}
+                      onClick={() => reopen(p.id)}
+                      className="text-sm px-4 py-2 rounded border border-seam disabled:opacity-50"
+                    >
+                      重新開放審核
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <h3 className="font-display text-lg font-medium mb-2">社員與管理員</h3>

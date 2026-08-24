@@ -61,6 +61,8 @@ export default function Equipment({ user, role }) {
           <div className="mb-8 border border-seam rounded p-4 text-sm text-ash bg-concrete/40">
             {!user
               ? "登入後即可租借器材。目前你以訪客身份瀏覽，只能查看目錄。"
+              : role === "rejected"
+              ? "很抱歉，你的加入申請未通過審核，如有疑問請聯繫社團管理員。"
               : "你的帳號正在等候管理員審核學生身份，審核通過後才能租借器材。"}
           </div>
         )}

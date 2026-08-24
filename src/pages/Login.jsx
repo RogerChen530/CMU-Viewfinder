@@ -1,21 +1,55 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient.js";
+import TurnstileWidget from "../components/TurnstileWidget.jsx";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState(null);
+  const [widgetKey, setWidgetKey] = useState(0);
   const navigate = useNavigate();
+
+  function resetTurnstile() {
+    setTurnstileToken(null);
+    setWidgetKey((k) => k + 1);
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setError("登入失敗，請確認帳號密碼是否正確");
+
+    if (!turnstileToken) {
+      setError("請先完成人機驗證");
       return;
     }
+
+    setSubmitting(true);
+
+    const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
+      "verify-turnstile",
+      { body: { token: turnstileToken } }
+    );
+
+    if (verifyError || !verifyResult?.success) {
+      setError("人機驗證失敗，請重新嘗試");
+      resetTurnstile();
+      setSubmitting(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    setSubmitting(false);
+
+    if (error) {
+      setError("登入失敗，請確認帳號密碼是否正確");
+      resetTurnstile();
+      return;
+    }
+
     navigate("/");
   }
 
@@ -41,14 +75,22 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
           className="w-full border border-seam rounded px-3 py-2 mb-2 text-sm"
         />
-        <p className="text-xs text-right mb-2">
+        <p className="text-xs text-right mb-4">
           <Link to="/forgot-password" className="text-ash hover:text-moss">忘記密碼？</Link>
         </p>
 
+        <div className="mb-4">
+          <TurnstileWidget key={widgetKey} onVerify={setTurnstileToken} onExpire={() => setTurnstileToken(null)} />
+        </div>
+
         {error && <p className="text-xs text-red-700 mb-3">{error}</p>}
 
-        <button type="submit" className="w-full bg-moss text-paper text-sm py-2.5 rounded font-medium mt-2">
-          登入
+        <button
+          type="submit"
+          disabled={submitting || !turnstileToken}
+          className="w-full bg-moss text-paper text-sm py-2.5 rounded font-medium disabled:opacity-50"
+        >
+          {submitting ? "登入中..." : "登入"}
         </button>
 
         <p className="text-xs text-ash mt-4 text-center">

@@ -60,6 +60,13 @@ export default function Projects({ user, role }) {
           </div>
         )}
 
+        {user && role === "rejected" && (
+          <div className="max-w-md border border-seam rounded p-5">
+            <p className="text-sm">很抱歉，你的加入申請未通過審核。</p>
+            <p className="text-ash text-xs mt-2">如有疑問請聯繫社團管理員。</p>
+          </div>
+        )}
+
         {user && (role === "member" || role === "admin") && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {loading && <p className="text-ash text-sm col-span-2">載入中...</p>}

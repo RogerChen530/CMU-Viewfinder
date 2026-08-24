@@ -12,9 +12,11 @@ CMU Viewfinder 的功能開發紀錄。設定/部署步驟請看 `README.md`。
     具體審核方式待社團決議
 - 學生證/身份審核流程：註冊時建立 pending profile，寄通知信給管理員
   （Edge Function `notify-admin`，尚未設定 Resend secrets，見下方已知限制）
-- Cloudflare Turnstile 人機驗證：註冊送出前，token 會先送到
+- Cloudflare Turnstile 人機驗證：註冊跟登入表單都有，共用同一組
+  widget（同網域下可以重複用，不用分開申請）。token 送到
   `verify-turnstile` Edge Function 做伺服器端驗證，通過才真的呼叫
-  `signUp()`。Secret Key 只存在 Edge Function 裡，不會出現在前端或 git
+  `signUp()` / `signInWithPassword()`。Secret Key 只存在 Edge
+  Function 裡，不會出現在前端或 git
 - 忘記密碼流程：`/forgot-password` 申請信、`/reset-password` 設新密碼
 - 登出按鈕
 - `/account` 個人資料維護頁：大頭照上傳（Supabase Storage）、真名、
@@ -46,6 +48,11 @@ CMU Viewfinder 的功能開發紀錄。設定/部署步驟請看 `README.md`。
 
 - 真的檔案上傳（Supabase Storage，公開讀取、只有 admin 能上傳/刪除），
   仍保留貼圖片網址的選項
+- 可以編輯已上傳的照片（標題、拍攝資訊、作者、創作理念，也能換圖），
+  不用刪掉重傳
+- 刪除照片、換新圖時會一併清掉 Storage 裡的舊實體檔案，不會留下
+  孤兒檔案佔用容量（個人資料頁換大頭照也是同樣邏輯，確定新檔案
+  存檔成功後才清舊的，避免存檔前離開頁面導致頭像顯示不出來）
 - 點擊照片展開燈箱：全圖 + 詳細資訊（作者、拍攝條件、創作理念）
 - 首頁 Hero 動態照片：後台可指定「精選圖」，沒指定時 fallback 抓最新一張
 - 首頁「Gallery」區塊（原「近期作品」）最多顯示 6 張，精選圖優先，
@@ -65,7 +72,11 @@ CMU Viewfinder 的功能開發紀錄。設定/部署步驟請看 `README.md`。
 
 ## 管理後台（/admin）
 
-- 審核申請（核准/拒絕）、社員與管理員角色調整（用於幹部交接）
+- 審核申請（核准/拒絕）、社員與管理員角色調整（用於幹部交接）。
+  拒絕改成標記 `role='rejected'`，不再直接刪除 profiles——後台留得住
+  紀錄，能看到「已拒絕」清單，拒絕錯了可以一鍵「重新開放審核」
+  送回待審核；被拒絕的人登入後會看到明確的拒絕訊息，不會誤導成
+  還在審核中
 - `/admin/equipment` 器材新增/編輯/刪除
 - `/admin/gallery` 相簿新增/刪除
 - `/admin/announcements` 公告發布/刪除
@@ -88,16 +99,10 @@ CMU Viewfinder 的功能開發紀錄。設定/部署步驟請看 `README.md`。
 
 ## 已知限制 / 待處理
 
-- 相簿刪除、換頭像時，Storage 裡的舊實體檔案不會自動清掉，只刪資料庫那筆
 - Resend 通知信還沒真的設定 secrets／deploy，`notify-admin` 目前不會
-  真的寄出信
-- 管理後台「拒絕」申請只會刪 `profiles` 那筆，不會刪除背後的登入帳號
-  （`auth.users`，需要 Service Role Key 才能刪，不能放前端）。
-  被拒絕的人還是能登入，會卡在「審核中」畫面，admin 後台也看不到他。
-  討論過的修法：改成標記 `role='rejected'` 而不是刪除——先記著，
-  還沒決定要不要做
-- 登入介面沒有任何防止字典攻擊（brute-force / credential stuffing）
-  的機制，密碼可以無限次嘗試，沒有失敗次數鎖定或延遲。Supabase Auth
-  本身在平台層級有一些基礎速率限制，但應用層目前沒有額外防護——
-  先記著，還沒決定要不要做（可能方向：失敗次數過多後鎖定帳號一段
-  時間、或另外接 Turnstile 到登入表單）
+  真的寄出信——這個需要你自己去 Resend 申請 API key，貼給我之後
+  我不會經手這把 key，你要自己跑 `supabase secrets set` 設定
+- 圖片儲存空間策略未定：目前上傳的照片/頭像都是原檔直接存，沒有
+  壓縮，容量會撐得比想像快。討論過方向（前端上傳前壓縮／升級
+  Supabase 付費方案／改用 Cloudflare R2），等你跟甲方討論出結果
+  再處理

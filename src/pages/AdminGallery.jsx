@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AdminGuard from "../components/AdminGuard.jsx";
 import { supabase } from "../lib/supabaseClient.js";
+import { extractStoragePath } from "../lib/storagePath.js";
 
 // 名稱排序用的地區化比較器。JS 沒有「照注音排序」這個選項，
 // zh-Hant-u-co-pinyin 是效果最接近的替代方案（照發音順序排，
@@ -14,13 +15,16 @@ const nameCollator = new Intl.Collator("zh-Hant-u-co-pinyin", {
 
 const DISPLAY_COUNT_OPTIONS = [10, 20, 50, 100];
 
+const emptyForm = { image_url: "", caption: "", exif: "", author: "", description: "" };
+
 export default function AdminGallery({ user, role }) {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ image_url: "", caption: "", exif: "", author: "", description: "" });
+  const [form, setForm] = useState(emptyForm);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [editingId, setEditingId] = useState(null);
 
   // 篩選/排序控制
   const [displayCount, setDisplayCount] = useState(20);
@@ -49,7 +53,6 @@ export default function AdminGallery({ user, role }) {
       list = list.filter((p) => new Date(p.created_at) >= from);
     }
     if (dateTo) {
-      // 含當天整天
       const to = new Date(dateTo);
       to.setHours(23, 59, 59, 999);
       list = list.filter((p) => new Date(p.created_at) <= to);
@@ -70,11 +73,33 @@ export default function AdminGallery({ user, role }) {
     return list.slice(0, displayCount);
   }, [photos, dateFrom, dateTo, sortBy, sortDir, displayCount]);
 
+  function startEdit(photo) {
+    setEditingId(photo.id);
+    setForm({
+      image_url: photo.image_url ?? "",
+      caption: photo.caption ?? "",
+      exif: photo.exif ?? "",
+      author: photo.author ?? "",
+      description: photo.description ?? "",
+    });
+    setFile(null);
+    setError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setFile(null);
+    setError("");
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
     let imageUrl = form.image_url.trim();
+    const previousPhoto = editingId ? photos.find((p) => p.id === editingId) : null;
 
     if (file) {
       setUploading(true);
@@ -95,34 +120,62 @@ export default function AdminGallery({ user, role }) {
       return;
     }
 
-    const { error } = await supabase.from("photos").insert({
+    const payload = {
       image_url: imageUrl,
       caption: form.caption,
       exif: form.exif,
       author: form.author,
       description: form.description,
-      uploaded_by: user.id,
-    });
+    };
 
-    if (error) {
-      setError("新增失敗：" + error.message);
-      return;
+    if (editingId) {
+      const { error } = await supabase.from("photos").update(payload).eq("id", editingId);
+      if (error) {
+        setError("更新失敗：" + error.message);
+        return;
+      }
+
+      // 換了新圖檔的話，把舊的實體檔案從 Storage 清掉，避免留下孤兒檔案。
+      // 只有當舊圖是我們自己 Storage 裡的檔案（不是外部貼的網址）時才會處理。
+      if (file && previousPhoto?.image_url && previousPhoto.image_url !== imageUrl) {
+        const oldPath = extractStoragePath(previousPhoto.image_url, "photos");
+        if (oldPath) {
+          await supabase.storage.from("photos").remove([oldPath]);
+        }
+      }
+    } else {
+      const { error } = await supabase.from("photos").insert({ ...payload, uploaded_by: user.id });
+      if (error) {
+        setError("新增失敗：" + error.message);
+        return;
+      }
     }
 
-    setForm({ image_url: "", caption: "", exif: "", author: "", description: "" });
-    setFile(null);
+    cancelEdit();
     await load();
   }
 
   async function handleDelete(id) {
     if (!confirm("確定要刪除這張照片嗎？")) return;
+
+    const photo = photos.find((p) => p.id === id);
     const { error } = await supabase.from("photos").delete().eq("id", id);
-    if (error) console.error("刪除失敗：", error);
+    if (error) {
+      console.error("刪除失敗：", error);
+      return;
+    }
+
+    // 資料庫那筆刪掉後，順便把 Storage 裡的實體檔案也清掉，
+    // 避免留下沒有任何資料列指向、卻還在佔用容量的孤兒檔案。
+    const path = extractStoragePath(photo?.image_url, "photos");
+    if (path) {
+      await supabase.storage.from("photos").remove([path]);
+    }
+
     await load();
   }
 
   async function setFeatured(id) {
-    // 先把其他張的精選狀態清掉，再把指定這張設成精選（同時間只有一張是首頁精選圖）
     await supabase.from("photos").update({ is_featured: false }).neq("id", id);
     const { error } = await supabase.from("photos").update({ is_featured: true }).eq("id", id);
     if (error) console.error("設定精選圖失敗：", error);
@@ -132,10 +185,12 @@ export default function AdminGallery({ user, role }) {
   return (
     <AdminGuard user={user} role={role} title="相簿管理">
       <form onSubmit={handleSubmit} className="border border-seam rounded p-5 mb-8 max-w-lg">
-        <p className="text-sm font-medium mb-4">新增照片</p>
+        <p className="text-sm font-medium mb-4">{editingId ? "編輯照片" : "新增照片"}</p>
         <div className="flex flex-col gap-3 mb-3">
           <div>
-            <label className="block text-xs text-ash mb-1">上傳檔案</label>
+            <label className="block text-xs text-ash mb-1">
+              {editingId ? "更換檔案（選填，不選就沿用原本的圖）" : "上傳檔案"}
+            </label>
             <input
               type="file"
               accept="image/*"
@@ -177,13 +232,20 @@ export default function AdminGallery({ user, role }) {
           />
         </div>
         {error && <p className="text-red-700 text-xs mb-3">{error}</p>}
-        <button
-          type="submit"
-          disabled={uploading}
-          className="text-sm px-4 py-2 rounded bg-moss text-paper font-medium disabled:opacity-50"
-        >
-          {uploading ? "上傳中..." : "新增照片"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={uploading}
+            className="text-sm px-4 py-2 rounded bg-moss text-paper font-medium disabled:opacity-50"
+          >
+            {uploading ? "上傳中..." : editingId ? "儲存變更" : "新增照片"}
+          </button>
+          {editingId && (
+            <button type="button" onClick={cancelEdit} className="text-sm px-4 py-2 rounded border border-seam">
+              取消
+            </button>
+          )}
+        </div>
       </form>
 
       {/* 篩選/排序控制列 */}
@@ -279,7 +341,13 @@ export default function AdminGallery({ user, role }) {
               <div className="p-3">
                 <p className="text-xs text-ash mb-1">{p.caption || p.exif || "（無說明）"}</p>
                 {p.author && <p className="text-[11px] text-ash mb-2">作者：{p.author}</p>}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => startEdit(p)}
+                    className="text-xs px-3 py-1.5 rounded border border-seam"
+                  >
+                    編輯
+                  </button>
                   {!p.is_featured && (
                     <button
                       onClick={() => setFeatured(p.id)}

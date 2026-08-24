@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Nav from "../components/Nav.jsx";
 import Avatar from "../components/Avatar.jsx";
 import { supabase } from "../lib/supabaseClient.js";
+import { extractStoragePath } from "../lib/storagePath.js";
 
 export default function Account({ user, role }) {
   const [loading, setLoading] = useState(true);
@@ -11,6 +12,7 @@ export default function Account({ user, role }) {
   const [saved, setSaved] = useState(false);
 
   const [avatarUrl, setAvatarUrl] = useState(null);
+  const [persistedAvatarUrl, setPersistedAvatarUrl] = useState(null); // 資料庫裡實際存的那個，跟畫面預覽分開追蹤
   const [realName, setRealName] = useState("");
   const [nicknames, setNicknames] = useState([]);
   const [displayChoice, setDisplayChoice] = useState("real_name"); // "real_name" 或某個暱稱字串
@@ -36,6 +38,7 @@ export default function Account({ user, role }) {
         }
         if (data) {
           setAvatarUrl(data.avatar_url);
+          setPersistedAvatarUrl(data.avatar_url);
           setRealName(data.real_name ?? "");
           setNicknames(data.nicknames ?? []);
           setIgId(data.ig_id ?? "");
@@ -70,6 +73,9 @@ export default function Account({ user, role }) {
 
     const { data } = supabase.storage.from("avatars").getPublicUrl(path);
     setAvatarUrl(data.publicUrl);
+    // 這裡只更新預覽，舊檔案要等「儲存變更」真的成功後才會清掉
+    // （見 handleSave），避免存檔前離開頁面導致舊頭像被誤刪、
+    // 但資料庫其實還指著它，變成頭像顯示不出來。
     setUploading(false);
   }
 
@@ -112,6 +118,15 @@ export default function Account({ user, role }) {
       setError("儲存失敗：" + error.message);
       return;
     }
+
+    // 存檔真的成功了，這時候換掉的舊頭像才安全可以刪
+    if (persistedAvatarUrl && persistedAvatarUrl !== avatarUrl) {
+      const oldPath = extractStoragePath(persistedAvatarUrl, "avatars");
+      if (oldPath) {
+        await supabase.storage.from("avatars").remove([oldPath]);
+      }
+    }
+    setPersistedAvatarUrl(avatarUrl);
 
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
