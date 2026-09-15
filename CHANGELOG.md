@@ -96,6 +96,8 @@ CMU Viewfinder 的功能開發紀錄。設定/部署步驟請看 `README.md`。
 - 修正 Login/Register 頁面互相切換的連結：原本用原生 `<a href>` 會
   整頁跳轉到網域根目錄，部署到 GitHub Pages（子路徑）會 404，
   改用 React Router 的 `<Link>` 解決
+- Supabase 免費方案保活：`.github/workflows/keepalive.yml` 排程每週
+  戳兩次資料庫，防止連續 7 天沒活動被自動暫停（細節見 README）
 
 ## 已知限制 / 待處理
 

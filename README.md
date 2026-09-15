@@ -90,3 +90,11 @@ supabase functions deploy verify-turnstile
 部署成功後，網站網址會是 `https://rogerchen530.github.io/CMU-Viewfinder/`，可以在 repo 的 Settings → Pages 頁面上方看到這個連結。
 
 **關於前端路由 404 的處理**：GitHub Pages 是純靜態主機，不懂 `/team`、`/gallery` 這種 React Router 的前端路由，直接訪問這些網址或重新整理會 404。Workflow 裡會自動把 `index.html` 複製成 `404.html`，讓 GitHub Pages 對任何未知路徑都回傳同一份內容，由瀏覽器端的 React Router 接手判斷要顯示哪一頁。
+
+## Supabase 免費方案保活
+
+Supabase 免費方案連續 **7 天沒有資料庫活動**會自動暫停專案（資料不會消失，但需要去後台手動按 Restore 才能恢復）。寒暑假社員少用網站的時候特別容易撞到。
+
+`.github/workflows/keepalive.yml` 會用 GitHub Actions 排程，每週日跟週三各戳一次資料庫（呼叫 `ping_heartbeat()` 這個函式做一次真的寫入），維持專案被判定為活躍。不用額外申請任何東西，用的是你已經設定好的 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` 這兩個 Secrets。
+
+**這個 workflow 是排程觸發的，不會因為 push 程式碼就自動開始跑**——GitHub 對排程 workflow 的處理方式是：只要 repo 保持正常活躍（有人在用、有 commit），排程通常會準時執行；但如果 **repo 本身也長期沒人動**，GitHub 可能會停用排程 workflow，需要手動去 Actions 分頁重新啟用。交接給下一屆時記得提醒新任幹部這件事。

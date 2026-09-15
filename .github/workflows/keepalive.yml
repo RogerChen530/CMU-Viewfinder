@@ -1,0 +1,19 @@
+name: Supabase Keepalive
+
+on:
+  schedule:
+    # UTC 時間每週日、週三各跑一次，間隔約 3-4 天，
+    # 安全落在 Supabase 免費方案「連續 7 天無活動」的門檻內
+    - cron: "0 0 * * 0,3"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase 資料庫，防止免費方案因不活躍被暫停
+        run: |
+          curl -sf -X POST "${{ secrets.VITE_SUPABASE_URL }}/rest/v1/rpc/ping_heartbeat" \
+            -H "apikey: ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json"
