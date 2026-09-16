@@ -116,3 +116,12 @@ CMU Viewfinder 的功能開發紀錄。設定/部署步驟請看 `README.md`。
   是 CORS 設定漏掉，兩支 function 都補上）。這也代表在這次修正
   之前，`notify-admin` 從註冊頁呼叫時可能一直悄悄失敗，因為
   `Register.jsx` 沒有檢查這支呼叫的錯誤，不會顯示出來
+- 修正 Supabase Security Advisor（後台安全掃描工具，不會主動通知，
+  要自己進去看）抓出的問題：`heartbeat` 表補上明確的拒絕存取
+  policy（原本是故意鎖死但沒寫 policy，被誤判成錯誤）；`is_admin()`
+  等函式收回預設開放給 `PUBLIC` 的執行權限，只留給真的需要的
+  `anon`／`authenticated`（trigger 專用的函式收回後不重新開放給
+  任何角色）；`storage.avatars`／`storage.photos` 拿掉過寬的
+  select policy——已查證公開網址讀圖完全不經過這條 RLS，拿掉不影響
+  顯示，同時解決「檔名可被列出」的疑慮（`member_directory` 那個
+  Security Definer View 的提示是設計上故意如此，不需要修）
