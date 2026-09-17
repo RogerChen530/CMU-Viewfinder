@@ -98,6 +98,23 @@ CMU Viewfinder 的功能開發紀錄。設定/部署步驟請看 `README.md`。
   改用 React Router 的 `<Link>` 解決
 - Supabase 免費方案保活：`.github/workflows/keepalive.yml` 排程每週
   戳兩次資料庫，防止連續 7 天沒活動被自動暫停（細節見 README）
+- 修正 `verify-turnstile`、`notify-admin` 兩支 Edge Function 都缺
+  CORS 標頭：瀏覽器從 GitHub Pages 跨網域呼叫 Supabase Function
+  前會先送 OPTIONS 預檢請求，沒有 `Access-Control-Allow-Origin`
+  標頭會被瀏覽器直接擋下來，不分瀏覽器種類（一開始在 Safari 上
+  發現，一度誤以為是 Safari 相容性問題，後來在 Edge 測試才確認
+  是 CORS 設定漏掉，兩支 function 都補上）
+- 修正 Supabase Security Advisor（後台安全掃描工具，不會主動通知，
+  要自己進去看）抓出的問題：`heartbeat` 表補上明確的拒絕存取
+  policy（原本是故意鎖死但沒寫 policy，被誤判成錯誤）；`is_admin()`
+  等函式收回預設開放給 `PUBLIC` 的執行權限，只留給真的需要的
+  `anon`／`authenticated`；`storage.avatars`／`storage.photos` 拿掉
+  過寬的 select policy——已查證公開網址讀圖完全不經過這條 RLS，
+  拿掉不影響顯示，同時解決「檔名可被列出」的疑慮。`member_directory`
+  那個 Security Definer View 的 ERROR 提示，審視後判定是設計上
+  故意如此、風險可控，決定不修（改寫成函式雖然能消除這則報告，
+  但除了報告好看沒有實質安全性提升，卻有機率動壞現在正常運作的
+  功能，不符合效益）
 
 ## 已知限制 / 待處理
 
@@ -108,20 +125,3 @@ CMU Viewfinder 的功能開發紀錄。設定/部署步驟請看 `README.md`。
   壓縮，容量會撐得比想像快。討論過方向（前端上傳前壓縮／升級
   Supabase 付費方案／改用 Cloudflare R2），等你跟甲方討論出結果
   再處理
-- 修正 `verify-turnstile`、`notify-admin` 兩支 Edge Function 都缺
-  CORS 標頭：瀏覽器從 GitHub Pages 跨網域呼叫 Supabase Function
-  前會先送 OPTIONS 預檢請求，沒有 `Access-Control-Allow-Origin`
-  標頭會被瀏覽器直接擋下來，不分瀏覽器種類（一開始在 Safari 上
-  發現，一度誤以為是 Safari 相容性問題，後來在 Edge 測試才確認
-  是 CORS 設定漏掉，兩支 function 都補上）。這也代表在這次修正
-  之前，`notify-admin` 從註冊頁呼叫時可能一直悄悄失敗，因為
-  `Register.jsx` 沒有檢查這支呼叫的錯誤，不會顯示出來
-- 修正 Supabase Security Advisor（後台安全掃描工具，不會主動通知，
-  要自己進去看）抓出的問題：`heartbeat` 表補上明確的拒絕存取
-  policy（原本是故意鎖死但沒寫 policy，被誤判成錯誤）；`is_admin()`
-  等函式收回預設開放給 `PUBLIC` 的執行權限，只留給真的需要的
-  `anon`／`authenticated`（trigger 專用的函式收回後不重新開放給
-  任何角色）；`storage.avatars`／`storage.photos` 拿掉過寬的
-  select policy——已查證公開網址讀圖完全不經過這條 RLS，拿掉不影響
-  顯示，同時解決「檔名可被列出」的疑慮（`member_directory` 那個
-  Security Definer View 的提示是設計上故意如此，不需要修）
