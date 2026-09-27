@@ -12,7 +12,10 @@ export default function ForgotPassword() {
     setError("");
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      // window.location.origin 只有網域，不含 /CMU-Viewfinder/ 這段
+      // GitHub Pages 子路徑，要接上 import.meta.env.BASE_URL 才是
+      // 真正部署後的完整路徑（本地開發時 BASE_URL 是 "/"，不受影響）
+      redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}reset-password`,
     });
 
     if (error) {

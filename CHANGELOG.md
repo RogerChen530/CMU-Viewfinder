@@ -125,3 +125,14 @@ CMU Viewfinder 的功能開發紀錄。設定/部署步驟請看 `README.md`。
   壓縮，容量會撐得比想像快。討論過方向（前端上傳前壓縮／升級
   Supabase 付費方案／改用 Cloudflare R2），等你跟甲方討論出結果
   再處理
+- 修正忘記密碼連結指向錯誤網址：`redirectTo` 用 `window.location.origin`
+  組出來的網址不含 `/CMU-Viewfinder/` 這段 GitHub Pages 子路徑，
+  補上 `import.meta.env.BASE_URL` 才對。**這個修正還不夠**：測試時
+  發現 Supabase 後台 Authentication → URL Configuration 的
+  Site URL 還停留在 Supabase 給的預設值（`localhost:3000`），
+  沒改成我們真正的網址，這部分要你自己去後台設定，我沒辦法動：
+  - **Site URL** 設成正式網址：`https://rogerchen530.github.io/CMU-Viewfinder/`
+  - **Redirect URLs** 加入允許清單：正式網址跟本地開發網址
+    （`http://localhost:5173/**`）都要加，星號是萬用字元
+  設定沒對齊之前，重設密碼連結會被導去錯誤網址，看到
+  `otp_expired`／`access_denied` 這類錯誤
