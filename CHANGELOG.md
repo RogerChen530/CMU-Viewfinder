@@ -116,23 +116,55 @@ CMU Viewfinder 的功能開發紀錄。設定/部署步驟請看 `README.md`。
   但除了報告好看沒有實質安全性提升，卻有機率動壞現在正常運作的
   功能，不符合效益）
 
+## 動畫
+
+全站只用 Tailwind 內建的 transition 與自訂 keyframes，沒有加任何動畫
+套件。所有動畫都尊重系統的「減少動態效果」設定，而且只動
+`opacity`／`transform`，不觸發版面重排。
+
+- 相簿格子 hover 時照片 300ms 放大到 1.03 倍（Home 與 Gallery 共用的
+  `GalleryFrame`）。注意 `ease-out` 也要加 `motion-safe:` 前綴，否則會被
+  `motion-safe:transition-transform` 內建的緩動曲線蓋掉
+- `tailwind.config.js` 定義 `fade-in`／`fade-out`（只有透明度）與
+  `lb-in`／`lb-out`（透明度加縮放），進場 200ms、退場 150ms
+- 燈箱（`PhotoLightbox`）進退場動畫：背景遮罩淡入淡出、中間面板縮放
+  淡入淡出；Esc、點背景、關閉按鈕都會先播退場再關閉。燈箱開著時鎖住
+  背景捲動，並用 padding 補回捲軸寬度，避免 Windows 上版面左右跳。
+  `PhotoLightbox` 從頁面載入起就一直掛著（沒選照片時只是不輸出畫面），
+  修改時要以 `photo` 是否為 null 判斷開關，細節見元件內註解
+
 ## 已知限制 / 待處理
 
-- Resend 通知信還沒真的設定 secrets／deploy，`notify-admin` 目前不會
-  真的寄出信——這個需要你自己去 Resend 申請 API key，貼給我之後
-  我不會經手這把 key，你要自己跑 `supabase secrets set` 設定
+- **一般人收不到註冊驗證信與重設密碼信**：Supabase 內建寄信只寄給
+  專案團隊成員的信箱，而且每小時上限 2 封，必須設定自訂 SMTP 才能
+  正式上線。正在討論的兩個方向：
+  - 買自有網域，在 Resend 驗證網域後當作 SMTP
+  - 不買網域，直接用社團 Gmail（`smtp.gmail.com`）加應用程式密碼當
+    SMTP。社團信箱要先開兩步驟驗證；改密碼或關閉兩步驟驗證會讓
+    應用程式密碼失效，交接換密碼後要重新產生並填回 Supabase
+  兩種都只要在 Supabase 後台設定，網站程式碼不用改
+- **新註冊通知信還不會寄出**：`notify-admin` 走的是 Resend 的 API，
+  不經過上面的 SMTP 設定，還需要 `RESEND_API_KEY`、`ADMIN_EMAIL`
+  兩組 secrets。API key 由持有人自己用 `supabase secrets set` 設定，
+  不要貼到任何對話、檔案或 issue 裡。Resend 沒有驗證網域時只能寄到
+  帳號本身的信箱，能不能寄到社團信箱要實際測試
 - 圖片儲存空間策略未定：目前上傳的照片/頭像都是原檔直接存，沒有
   壓縮，容量會撐得比想像快。討論過方向（前端上傳前壓縮／升級
-  Supabase 付費方案／改用 Cloudflare R2），等你跟甲方討論出結果
+  Supabase 付費方案／改用 Cloudflare R2），等跟社團討論出結果
   再處理
-- 修正忘記密碼連結指向錯誤網址：`redirectTo` 用 `window.location.origin`
+- 已修正忘記密碼連結指向錯誤網址：`redirectTo` 用 `window.location.origin`
   組出來的網址不含 `/CMU-Viewfinder/` 這段 GitHub Pages 子路徑，
-  補上 `import.meta.env.BASE_URL` 才對。**這個修正還不夠**：測試時
-  發現 Supabase 後台 Authentication → URL Configuration 的
-  Site URL 還停留在 Supabase 給的預設值（`localhost:3000`），
-  沒改成我們真正的網址，這部分要你自己去後台設定，我沒辦法動：
-  - **Site URL** 設成正式網址：`https://rogerchen530.github.io/CMU-Viewfinder/`
-  - **Redirect URLs** 加入允許清單：正式網址跟本地開發網址
-    （`http://localhost:5173/**`）都要加，星號是萬用字元
-  設定沒對齊之前，重設密碼連結會被導去錯誤網址，看到
-  `otp_expired`／`access_denied` 這類錯誤
+  補上 `import.meta.env.BASE_URL` 才對。Supabase 後台
+  Authentication → URL Configuration 也已設定：
+  - **Site URL**：`https://rogerchen530.github.io/CMU-Viewfinder/`
+  - **Redirect URLs**：`https://rogerchen530.github.io/CMU-Viewfinder/**`
+    與 `http://localhost:5173/**`
+  repo 轉移後網址會改變，這兩項要跟著改，否則驗證信與重設密碼連結
+  會導向舊網址，出現 `otp_expired`／`access_denied` 這類錯誤。
+  忘記密碼功能目前仍受上面的寄信限制，一般人收不到信
+- 首頁 Hero 的「瀏覽相簿」「加入社團」是 `<span>`，沒有連結，點了
+  沒有反應，應改成 React Router 的 `<Link>`
+- 相簿格子是可點擊的 `div`，鍵盤無法 focus 也無法打開燈箱
+- Supabase Security Advisor 還有三項警告未審視：Auth RLS
+  Initialization Plan、Multiple Permissive Policies、Leaked Password
+  Protection Disabled
