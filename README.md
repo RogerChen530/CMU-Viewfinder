@@ -43,8 +43,27 @@ supabase secrets set ADMIN_EMAIL=你要收審核信的信箱
 supabase functions deploy notify-admin
 ```
 
-**5. 手動把自己升級成 admin**
-第一個帳號註冊完，role 預設是 `pending`。去 Supabase 後台 Table Editor → `profiles` 表，把自己那筆的 `role` 手動改成 `admin`，之後就能透過後台審核其他人、或未來做的管理頁面來交接。
+**5. 手動把第一個帳號升級成 admin**
+
+第一個帳號註冊完，role 預設是 `pending`，而且這時還沒有任何管理員能在網站後台核准它，所以第一個 admin 要直接改資料庫。
+
+**不能用 Table Editor 直接改 `role` 欄位**：`profiles` 有一個觸發器（`enforce_profile_update`，見 migration 0011），會擋下「不是管理員的人修改角色」。後台 Table Editor 送出的修改沒有帶登入身分，`is_admin()` 判斷為否，會跳出「只有管理員能修改角色」的錯誤。
+
+改用 Supabase 後台的 **SQL Editor**，執行下面這段（把信箱換成第一個帳號註冊用的登入 Email）：
+
+```sql
+begin;
+alter table public.profiles disable trigger enforce_profile_update;
+update public.profiles set role = 'admin'
+  where id = (select id from auth.users where email = '第一個帳號的登入信箱');
+alter table public.profiles enable trigger enforce_profile_update;
+commit;
+```
+
+- 這段包在同一個交易裡：觸發器只在這次修改期間停用，`commit` 時已經重新啟用；中途出錯會整段還原，觸發器也不會停留在停用狀態。
+- 執行結果要看到 `UPDATE 1`。如果是 `UPDATE 0`，代表信箱打錯，沒有任何資料被改。
+
+之後的管理員都不用再這樣做：讓對方正常註冊、在網站後台核准成社員，再由現任管理員在「審核與社員」分頁按「設為管理員」即可。
 
 ## Cloudflare Turnstile 設定步驟（註冊防機器人）
 
@@ -98,3 +117,7 @@ Supabase 免費方案連續 **7 天沒有資料庫活動**會自動暫停專案�
 `.github/workflows/keepalive.yml` 會用 GitHub Actions 排程，每週日跟週三各戳一次資料庫（呼叫 `ping_heartbeat()` 這個函式做一次真的寫入），維持專案被判定為活躍。不用額外申請任何東西，用的是你已經設定好的 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` 這兩個 Secrets。
 
 **這個 workflow 是排程觸發的，不會因為 push 程式碼就自動開始跑**——GitHub 對排程 workflow 的處理方式是：只要 repo 保持正常活躍（有人在用、有 commit），排程通常會準時執行；但如果 **repo 本身也長期沒人動**，GitHub 可能會停用排程 workflow，需要手動去 Actions 分頁重新啟用。交接給下一屆時記得提醒新任幹部這件事。
+
+**排程失敗時誰會知道**：GitHub 只會把排程 workflow 失敗的通知信寄給最後一個修改這個 workflow 檔的人，不是寄給所有人。repo 轉移後，要確認社團這邊有人收得到，或定期去 Actions 分頁看一下 Supabase Keepalive 是不是綠的。
+
+**專案被暫停了怎麼辦**：保活只能防止「沒活動」造成的自動暫停，擋不住有人在後台手動暫停。到 Supabase 後台按 Restore 恢復即可，資料都還在。恢復後的幾分鐘內，專案網址可能還連不上（Keepalive 會出現 curl `exit code 6`，也就是查不到網址），這是網址的 DNS 紀錄還在重新生效，等幾分鐘再去 Actions 分頁手動按 Run workflow 確認即可。
